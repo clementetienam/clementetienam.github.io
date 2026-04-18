@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Clément Etienam</title>
+  <title>Clement Etienam</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -573,12 +573,7 @@
         <div class="photo-card">
           <div class="photo-frame">
             <!-- Replace src with your actual photo URL -->
-            <div class="photo-placeholder">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-              </svg>
-              <span>Add your photo</span>
-            </div>
+          <img src="IMG_2005.JPG" alt="Clement Etienam">
           </div>
           <div class="photo-badge">
             <div class="badge-stat">159</div>
@@ -600,13 +595,42 @@
       <div class="about-grid">
         <div class="about-text reveal">
           <p>
-            I am a <strong>Senior DevTech Engineer in the Energy team at NVIDIA</strong>, working at the intersection of GPU computing, scientific machine learning, and subsurface physics. My research focuses on making physics-informed neural operators fast and accurate enough to replace traditional numerical simulators in real-world workflows.
+            I am a <strong>Senior DevTech Engineer in the Energy team at NVIDIA</strong>, working at the
+            intersection of GPU computing, scientific machine learning, and subsurface physics. My research
+            focuses on making physics-informed neural operators fast and accurate enough to replace traditional
+            numerical simulators in real-world energy workflows — from reservoir management to carbon capture
+            and storage at scale.
           </p>
           <p>
-            My PhD at the <strong>University of Manchester</strong> (supervised by Oliver Dorn and Rossmary Villegas, with a postdoc under Kody Law) established a deep foundation in Bayesian inverse problems, ensemble methods, and surrogate modelling — work now applied directly to reservoir history matching, CO₂ storage, and carbon capture systems.
+            My PhD at the <strong>University of Manchester</strong> (supervised by Oliver Dorn and Rossmary
+            Villegas, with a postdoc under Kody Law) established a deep foundation in Bayesian inverse
+            problems, ensemble Kalman methods, and surrogate modelling. The central challenge: given
+            noisy observations <em>y</em>, recover the unknown parameter field <em>u</em> by characterising
+            the posterior
+          </p>
+          <p style="text-align:center; font-family:'Cormorant Garamond',serif; font-size:17px; color:var(--text); letter-spacing:0.02em; margin: 4px 0 4px;">
+            π(<em>u</em> | <em>y</em>) ∝ exp(−½‖<em>G</em>(<em>u</em>) − <em>y</em>‖²<sub>Γ</sub>) · π₀(<em>u</em>)
           </p>
           <p>
-            I developed the <strong>CCR (Cluster Classify Regress)</strong> framework for learning highly nonlinear discontinuous functions, and have applied PINO/FNO-based surrogates to the Norne field benchmark, achieving up to <strong>6000× speedup</strong> over conventional black-oil simulators. I collaborate with Shell, Caltech, Oak Ridge National Laboratory, and CSIRO.
+            where <em>G</em> : <em>u</em> ↦ <em>y</em> is the forward operator — classically a full
+            black-oil PDE solve, now replaced by a learned neural surrogate. This work is applied directly
+            to reservoir history matching, CO₂ plume migration, and ensemble-based inversion (ES-MDA, aREKI)
+            with generative priors.
+          </p>
+          <p>
+            I developed the <strong>CCR (Cluster Classify Regress)</strong> framework for learning highly
+            nonlinear discontinuous functions across sharp phase boundaries — a persistent failure mode for
+            standard regression. Building on this, I have applied PINO and FNO-based surrogates to the
+            Norne field black-oil benchmark (46×112×22 grid, multi-phase, multi-well), solving the
+            parametric PDE family
+          </p>
+          <p style="text-align:center; font-family:'Cormorant Garamond',serif; font-size:17px; color:var(--text); letter-spacing:0.02em; margin: 4px 0 4px;">
+            ∂<sub>t</sub>(<em>φ S<sub>α</sub></em>) + ∇·<em>F<sub>α</sub></em>(<em>S</em>, <em>p</em>, <em>K</em>) = <em>q<sub>α</sub></em>
+          </p>
+          <p>
+            across thousands of permeability realisations in a single forward pass, achieving up to
+            <strong>6000× speedup</strong> over conventional simulators. I contribute to the
+            <strong>NVIDIA PhysicsNeMo</strong> open-source framework.
           </p>
         </div>
         <div class="stats-grid reveal">
