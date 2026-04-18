@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Clément Etienam</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0b;
+      --surface: #111114;
+      --border: rgba(255,255,255,0.07);
+      --accent: #00e5a0;
+      --accent2: #7b61ff;
+      --text: #e8e6e3;
+      --muted: #6b6a68;
+      --tag-bg: rgba(0,229,160,0.08);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.4;
+    }
+
+    /* ── GLOW BLOBS ── */
+    .glow-blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .blob-1 { width: 500px; height: 500px; background: rgba(0,229,160,0.04); top: -100px; right: -100px; }
+    .blob-2 { width: 400px; height: 400px; background: rgba(123,97,255,0.05); bottom: 20%; left: -100px; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 60px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,10,11,0.85);
+      backdrop-filter: blur(20px);
+      animation: fadeDown 0.8s ease both;
+    }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: 0.04em;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--accent); }
+
+    .nav-links { display: flex; gap: 36px; }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* ── LAYOUT ── */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 60px;
+      position: relative;
+      z-index: 1;
+    }
+
+    section { padding: 100px 0; }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding-top: 80px;
+    }
+
+    .hero-inner {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 80px;
+      align-items: center;
+      width: 100%;
+    }
+
+    .hero-label {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: fadeUp 0.8s 0.2s ease both;
+    }
+    .hero-label::before {
+      content: '';
+      display: block;
+      width: 32px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(52px, 7vw, 88px);
+      font-weight: 300;
+      line-height: 1.0;
+      letter-spacing: -0.02em;
+      margin-bottom: 32px;
+      animation: fadeUp 0.8s 0.35s ease both;
+    }
+    h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-desc {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.8;
+      max-width: 520px;
+      margin-bottom: 48px;
+      animation: fadeUp 0.8s 0.5s ease both;
+    }
+
+    .hero-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 48px;
+      animation: fadeUp 0.8s 0.6s ease both;
+    }
+    .tag {
+      padding: 5px 14px;
+      border: 1px solid rgba(0,229,160,0.2);
+      border-radius: 2px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      background: var(--tag-bg);
+      text-transform: uppercase;
+    }
+
+    .hero-links {
+      display: flex;
+      gap: 16px;
+      animation: fadeUp 0.8s 0.7s ease both;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-decoration: none;
+      text-transform: uppercase;
+      border-radius: 2px;
+      transition: all 0.25s;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      border: 1px solid var(--accent);
+    }
+    .btn-primary:hover { background: transparent; color: var(--accent); }
+    .btn-secondary {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
+
+    /* ── PHOTO CARD ── */
+    .photo-card {
+      animation: fadeUp 0.8s 0.4s ease both;
+      position: relative;
+    }
+    .photo-frame {
+      width: 100%;
+      aspect-ratio: 3/4;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .photo-frame::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 60%, rgba(10,10,11,0.6));
+    }
+    .photo-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .photo-placeholder svg { opacity: 0.3; }
+    .photo-frame img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .photo-badge {
+      position: absolute;
+      bottom: -16px; right: -16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 14px 18px;
+    }
+    .badge-stat { font-size: 24px; font-family: 'Syne', sans-serif; font-weight: 700; color: var(--accent); }
+    .badge-label { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+    /* ── SECTION HEADERS ── */
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      gap: 20px;
+      margin-bottom: 60px;
+    }
+    .section-header h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(36px, 5vw, 56px);
+      font-weight: 300;
+      line-height: 1;
+    }
+    .section-num {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      text-transform: uppercase;
+      font-family: 'DM Mono', monospace;
+    }
+    hr.section-rule {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin-bottom: 60px;
+    }
+
+    /* ── ABOUT ── */
+    #about { background: var(--surface); }
+    #about .container { padding-top: 0; padding-bottom: 0; }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: start;
+    }
+
+    .about-text p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 2;
+      margin-bottom: 20px;
+    }
+    .about-text p strong { color: var(--text); font-weight: 500; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+    .stat-box {
+      background: var(--surface);
+      padding: 28px;
+    }
+    .stat-box .num {
+      font-family: 'Syne', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat-box .num span { color: var(--accent); }
+    .stat-box .lbl {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* ── PUBLICATIONS ── */
+    .pub-list { display: flex; flex-direction: column; gap: 2px; }
+
+    .pub-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 28px 32px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 24px;
+      align-items: start;
+      transition: border-color 0.25s, background 0.25s;
+      text-decoration: none;
+      color: inherit;
+    }
+    .pub-item:hover {
+      border-color: rgba(0,229,160,0.3);
+      background: rgba(0,229,160,0.02);
+    }
+
+    .pub-year {
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      padding-top: 4px;
+      min-width: 40px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .pub-body { flex: 1; }
+    .pub-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 1.3;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .pub-authors {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+    .pub-authors strong { color: var(--text); }
+    .pub-venue {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      color: var(--accent2);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .pub-arrow {
+      color: var(--muted);
+      font-size: 18px;
+      padding-top: 2px;
+      transition: color 0.2s, transform 0.2s;
+    }
+    .pub-item:hover .pub-arrow { color: var(--accent); transform: translateX(4px); }
+
+    /* ── GITHUB / CODE ── */
+    #code { background: var(--surface); }
+    .repos-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2px;
+    }
+    .repo-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 28px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .repo-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 0;
+      background: var(--accent);
+      transition: height 0.3s;
+    }
+    .repo-card:hover::before { height: 100%; }
+    .repo-card:hover { border-color: rgba(0,229,160,0.25); }
+
+    .repo-icon { font-size: 20px; margin-bottom: 14px; }
+    .repo-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .repo-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+    .repo-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .repo-lang::before {
+      content: '●';
+      margin-right: 5px;
+      color: var(--accent);
+    }
+
+    /* ── CONNECT ── */
+    .connect-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+    }
+    .connect-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 32px 28px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.25s;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .connect-card:hover {
+      background: rgba(0,229,160,0.04);
+      border-color: rgba(0,229,160,0.3);
+    }
+    .connect-icon { font-size: 22px; }
+    .connect-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .connect-sub { font-size: 11px; color: var(--muted); }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+    }
+    footer .container {
+      padding-top: 0; padding-bottom: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    footer p { font-size: 11px; color: var(--muted); }
+    footer span { color: var(--accent); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      nav { padding: 16px 24px; }
+      .nav-links { display: none; }
+      .container { padding: 0 24px; }
+      .hero-inner { grid-template-columns: 1fr; }
+      .photo-card { display: none; }
+      .about-grid { grid-template-columns: 1fr; gap: 40px; }
+      .repos-grid { grid-template-columns: 1fr; }
+      .connect-grid { grid-template-columns: 1fr 1fr; }
+      .pub-item { grid-template-columns: 1fr; gap: 8px; }
+      .pub-arrow { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="glow-blob blob-1"></div>
+  <div class="glow-blob blob-2"></div>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#hero" class="nav-logo">CE<span>.</span></a>
+    <div class="nav-links">
+      <a href="#about">About</a>
+      <a href="#publications">Research</a>
+      <a href="#code">Code</a>
+      <a href="#connect">Connect</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="container">
+      <div class="hero-inner">
+        <div>
+          <div class="hero-label">Senior DevTech Engineer · NVIDIA</div>
+          <h1>Clément<br><em>Etienam</em><br>Ph.D.</h1>
+          <p class="hero-desc">
+            GPU-accelerated reservoir simulation, physics-informed neural operators, and Bayesian inverse problems.
+            Building the next generation of scientific machine learning for subsurface flow and carbon capture.
+          </p>
+          <div class="hero-tags">
+            <span class="tag">FNO / PINO</span>
+            <span class="tag">HPC</span>
+            <span class="tag">Reservoir Simulation</span>
+            <span class="tag">CCS</span>
+            <span class="tag">Inverse Problems</span>
+            <span class="tag">CUDA</span>
+          </div>
+          <div class="hero-links">
+            <a href="#publications" class="btn btn-primary">View Research</a>
+            <a href="https://github.com/clementetienam" target="_blank" class="btn btn-secondary">GitHub →</a>
+          </div>
+        </div>
+
+        <div class="photo-card">
+          <div class="photo-frame">
+            <!-- Replace src with your actual photo URL -->
+            <div class="photo-placeholder">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+              <span>Add your photo</span>
+            </div>
+          </div>
+          <div class="photo-badge">
+            <div class="badge-stat">159</div>
+            <div class="badge-label">Citations</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-num">01 —</span>
+        <h2>About</h2>
+      </div>
+      <hr class="section-rule">
+      <div class="about-grid">
+        <div class="about-text reveal">
+          <p>
+            I am a <strong>Senior DevTech Engineer in the Energy team at NVIDIA</strong>, working at the intersection of GPU computing, scientific machine learning, and subsurface physics. My research focuses on making physics-informed neural operators fast and accurate enough to replace traditional numerical simulators in real-world workflows.
+          </p>
+          <p>
+            My PhD at the <strong>University of Manchester</strong> (supervised by Oliver Dorn and Rossmary Villegas, with a postdoc under Kody Law) established a deep foundation in Bayesian inverse problems, ensemble methods, and surrogate modelling — work now applied directly to reservoir history matching, CO₂ storage, and carbon capture systems.
+          </p>
+          <p>
+            I developed the <strong>CCR (Cluster Classify Regress)</strong> framework for learning highly nonlinear discontinuous functions, and have applied PINO/FNO-based surrogates to the Norne field benchmark, achieving up to <strong>6000× speedup</strong> over conventional black-oil simulators. I collaborate with Shell, Caltech, Oak Ridge National Laboratory, and CSIRO.
+          </p>
+        </div>
+        <div class="stats-grid reveal">
+          <div class="stat-box">
+            <div class="num">6000<span>×</span></div>
+            <div class="lbl">Simulation speedup</div>
+          </div>
+          <div class="stat-box">
+            <div class="num">159</div>
+            <div class="lbl">Total citations</div>
+          </div>
+          <div class="stat-box">
+            <div class="num">10<span>+</span></div>
+            <div class="lbl">Publications</div>
+          </div>
+          <div class="stat-box">
+            <div class="num">10<span>yr</span></div>
+            <div class="lbl">Research career</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PUBLICATIONS -->
+  <section id="publications">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-num">02 —</span>
+        <h2>Research</h2>
+      </div>
+      <hr class="section-rule">
+      <div class="pub-list">
+
+        <a href="https://advanced.onlinelibrary.wiley.com/doi/abs/10.1002/adts.202500747" target="_blank" class="pub-item reveal">
+          <div class="pub-year">2025</div>
+          <div class="pub-body">
+            <div class="pub-title">Accelerating Porous Media Flow Simulations with Fourier Neural Operators: An Application to Geologic Storage of CO₂</div>
+            <div class="pub-authors">A. Chandra, M. Koch, S. Pawar, A. Panda, K. Azizzadenesheli, J. Snippe, F. O. Alpak, F. Hariri, <strong>C. Etienam</strong>, P. Devarakota, A. Anandkumar, D. Hohl</div>
+            <div class="pub-venue">★ Advanced Theory and Simulations, Wiley · 2025</div>
+          </div>
+          <div class="pub-arrow">→</div>
+        </a>
+
+        <a href="https://arxiv.org/abs/2406.00889" target="_blank" class="pub-item reveal">
+          <div class="pub-year">2024</div>
+          <div class="pub-body">
+            <div class="pub-title">Reservoir History Matching of the Norne Field with Generative Exotic Priors and a Coupled Mixture of Experts — PINO Forward Model</div>
+            <div class="pub-authors"><strong>C. Etienam</strong>, Y. Juntao, O. Ovcharenko, I. Said</div>
+            <div class="pub-venue">arXiv:2406.00889</div>
+          </div>
+          <div class="pub-arrow">→</div>
+        </a>
+
+        <a href="https://arxiv.org/abs/2404.14447" target="_blank" class="pub-item reveal">
+          <div class="pub-year">2024</div>
+          <div class="pub-body">
+            <div class="pub-title">A Novel AI-Enhanced Reservoir Characterization with a Combined Mixture of Experts — NVIDIA Modulus-based PINO Forward Model</div>
+            <div class="pub-authors"><strong>C. Etienam</strong>, Y. Juntao, I. Said, O. Ovcharenko, K. Tangsali, P. Dimitrov, K. Hester</div>
+            <div class="pub-venue">arXiv:2404.14447</div>
+          </div>
+          <div class="pub-arrow">→</div>
+        </a>
+
+        <a href="https://openreview.net/forum?id=NeurIPS2022LIPS" target="_blank" class="pub-item reveal">
+          <div class="pub-year">2022</div>
+          <div class="pub-body">
+            <div class="pub-title">LIPS — Learning Industrial Physical Simulation Benchmark Suite</div>
+            <div class="pub-authors">M. Leyli-Abadi, A. Marot, J. Picault, D. Danan, M. Yagoubi, B. Donnot, S. Attoui, P. Dimitrov, A. Farjallah, <strong>C. Etienam</strong></div>
+            <div class="pub-venue">★ NeurIPS 2022</div>
+          </div>
+          <div class="pub-arrow">→</div>
+        </a>
+
+        <a href="https://arxiv.org/abs/2006.13309" target="_blank" class="pub-item reveal">
+          <div class="pub-year">2020</div>
+          <div class="pub-body">
+            <div class="pub-title">Ultra-fast Deep Mixtures of Gaussian Process Experts</div>
+            <div class="pub-authors"><strong>C. Etienam</strong>, K. J. H. Law, S. Wade</div>
+            <div class="pub-venue">arXiv:2006.13309</div>
+          </div>
+          <div class="pub-arrow">→</div>
+        </a>
+
+        <a href="https://www.aimsciences.org/article/doi/10.3934/fods.2019020" target="_blank" class="pub-item reveal">
+          <div class="pub-year">2019</div>
+          <div class="pub-body">
+            <div class="pub-title">CCR: Cluster Classify Regress — A General Method for Learning Discontinuous Functions</div>
+            <div class="pub-authors">D. E. Bernholdt, M. R. Cianciosa, <strong>C. Etienam</strong>, D. L. Green, K. J. H. Law, J. M. Park</div>
+            <div class="pub-venue">★ AIMS Foundations of Data Science · 2019</div>
+          </div>
+          <div class="pub-arrow">→</div>
+        </a>
+
+        <a href="https://arxiv.org/abs/1905.07469" target="_blank" class="pub-item reveal">
+          <div class="pub-year">2019</div>
+          <div class="pub-body">
+            <div class="pub-title">4D Seismic History Matching Incorporating Unsupervised Learning</div>
+            <div class="pub-authors"><strong>C. Etienam</strong></div>
+            <div class="pub-venue">arXiv:1905.07469</div>
+          </div>
+          <div class="pub-arrow">→</div>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CODE -->
+  <section id="code">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-num">03 —</span>
+        <h2>Code</h2>
+      </div>
+      <hr class="section-rule">
+      <div class="repos-grid">
+
+        <a href="https://github.com/NVIDIA/physicsnemo-sym" target="_blank" class="repo-card reveal">
+          <div class="repo-icon">⚡</div>
+          <div class="repo-name">NVIDIA / physicsnemo-sym</div>
+          <div class="repo-desc">Pythonic APIs, algorithms, and utilities for physics-informed model training. Built on top of PhysicsNeMo core with higher-level abstractions for domain scientists.</div>
+          <div class="repo-meta">
+            <span class="repo-lang">Python</span>
+            <span>★ 280</span>
+          </div>
+        </a>
+
+        <a href="https://github.com/clementetienam/Ensemble-based-History-Matching-with-a-Machine-Learning-Surrogate-Reservoir-Simulator" target="_blank" class="repo-card reveal">
+          <div class="repo-icon">🧠</div>
+          <div class="repo-name">CCR Surrogate Reservoir Simulator</div>
+          <div class="repo-desc">Ensemble-based history matching using the Cluster Classify Regress algorithm for approximating 2-phase flow in synthetic reservoirs with high accuracy.</div>
+          <div class="repo-meta">
+            <span class="repo-lang">Python</span>
+          </div>
+        </a>
+
+        <a href="https://github.com/clementetienam" target="_blank" class="repo-card reveal">
+          <div class="repo-icon">🔬</div>
+          <div class="repo-name">PhD Thesis Codebase</div>
+          <div class="repo-desc">Codes for "Structural and Shape construction using inverse problems and machine learning techniques." Includes MCMC, ensemble Kalman, and neural network implementations.</div>
+          <div class="repo-meta">
+            <span class="repo-lang">Python / MATLAB</span>
+          </div>
+        </a>
+
+        <a href="https://scholar.google.com/citations?user=yupEPF0AAAAJ&hl=en" target="_blank" class="repo-card reveal">
+          <div class="repo-icon">📄</div>
+          <div class="repo-name">Google Scholar Profile</div>
+          <div class="repo-desc">Full list of publications, citation metrics, and co-author network. 159 citations across inverse problems, neural operators, reservoir simulation, and HPC.</div>
+          <div class="repo-meta">
+            <span>159 citations</span>
+          </div>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CONNECT -->
+  <section id="connect">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-num">04 —</span>
+        <h2>Connect</h2>
+      </div>
+      <hr class="section-rule">
+      <div class="connect-grid">
+        <a href="mailto:cetienam@nvidia.com" class="connect-card reveal">
+          <div class="connect-icon">✉</div>
+          <div class="connect-label">Email</div>
+          <div class="connect-sub">cetienam@nvidia.com</div>
+        </a>
+        <a href="https://www.linkedin.com/in/clement-etienam-ph-d-2aa66661/" target="_blank" class="connect-card reveal">
+          <div class="connect-icon">in</div>
+          <div class="connect-label">LinkedIn</div>
+          <div class="connect-sub">Clement Etienam, Ph.D.</div>
+        </a>
+        <a href="https://github.com/clementetienam" target="_blank" class="connect-card reveal">
+          <div class="connect-icon">⌥</div>
+          <div class="connect-label">GitHub</div>
+          <div class="connect-sub">clementetienam</div>
+        </a>
+        <a href="https://scholar.google.com/citations?user=yupEPF0AAAAJ&hl=en" target="_blank" class="connect-card reveal">
+          <div class="connect-icon">◎</div>
+          <div class="connect-label">Google Scholar</div>
+          <div class="connect-sub">159 citations</div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <p>© 2026 Clément Etienam — <span>NVIDIA Energy DevTech</span></p>
+      <p>South Yorkshire, UK · <span>Psalm 50:15</span></p>
+    </div>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => entry.target.classList.add('visible'), i * 80);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    reveals.forEach(el => observer.observe(el));
+
+    // Stagger siblings
+    document.querySelectorAll('.pub-list, .repos-grid, .connect-grid').forEach(container => {
+      const children = container.querySelectorAll('.reveal');
+      children.forEach((child, i) => {
+        child.style.transitionDelay = `${i * 60}ms`;
+      });
+    });
+  </script>
+</body>
+</html>
