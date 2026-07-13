@@ -10,6 +10,13 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* KaTeX relies on unmodified box sizing/margins for its internal spans
+       (fraction bars, delimiters, sub/superscripts) — exclude it from the reset above */
+    .katex, .katex * {
+      box-sizing: content-box !important;
+    }
+    .katex { margin: 0; }
+
     :root {
       --bg: #0a0a0b;
       --surface: #111114;
@@ -191,62 +198,6 @@
       max-width: 520px;
       margin-bottom: 40px;
       animation: fadeUp 0.8s 0.5s ease both;
-    }
-
-    /* Equation ticker — the site's signature mathematical motif */
-    .eq-ticker {
-      position: relative;
-      overflow: hidden;
-      white-space: nowrap;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-      padding: 18px 0;
-      margin-bottom: 40px;
-      animation: fadeUp 0.8s 0.6s ease both;
-    }
-    .eq-ticker::before,
-    .eq-ticker::after {
-      content: '';
-      position: absolute;
-      top: 0; bottom: 0;
-      width: 60px;
-      z-index: 2;
-      pointer-events: none;
-    }
-    .eq-ticker::before { left: 0; background: linear-gradient(to right, var(--surface), transparent); }
-    .eq-ticker::after   { right: 0; background: linear-gradient(to left, var(--surface), transparent); }
-    .eq-ticker-track {
-      display: inline-flex;
-      width: max-content;
-      animation: ticker 75s linear infinite;
-    }
-    .eq-ticker:hover .eq-ticker-track { animation-play-state: paused; }
-    .eq-ticker-track span {
-      display: inline-flex;
-      align-items: center;
-      font-family: 'Cormorant Garamond', serif;
-      font-style: italic;
-      font-size: 18px;
-      color: var(--text);
-      padding: 0 36px;
-      position: relative;
-      white-space: nowrap;
-    }
-    .eq-ticker-track span::after {
-      content: '◆';
-      font-family: 'DM Mono', monospace;
-      font-style: normal;
-      font-size: 7px;
-      color: var(--accent);
-      margin-left: 36px;
-    }
-    @keyframes ticker {
-      from { transform: translateX(0); }
-      to   { transform: translateX(-50%); }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .eq-ticker-track { animation: none; }
     }
 
     .hero-tags {
@@ -763,10 +714,6 @@
             Building the next generation of scientific machine learning for subsurface flow and carbon capture.
           </p>
 
-          <div class="eq-ticker">
-            <div class="eq-ticker-track" id="eqTicker"></div>
-          </div>
-
           <div class="hero-tags">
             <span class="tag">Physics Informed neural Operator</span>
             <span class="tag">HPC</span>
@@ -816,8 +763,8 @@
             and storage at scale.
           </p>
           <p>
-            My PhD at the <strong>University of Manchester</strong> (supervised by Oliver Dorn and Rossmary
-            Villegas, with a postdoc under Kody Law) established a deep foundation in Bayesian inverse
+            My PhD at the <strong>University of Manchester</strong> (supervised by Oliver Dorn, with
+            co-supervisors Rossmary Villegas and Masoud Babaei, and a postdoc under Kody Law) established a deep foundation in Bayesian inverse
             problems, ensemble Kalman methods, and surrogate modelling. The central challenge: given
             noisy observations <em>y</em>, recover the unknown parameter field <em>u</em> by characterising
             the posterior
@@ -902,7 +849,7 @@
             <div class="edu-degree">Ph.D. Applied Mathematics</div>
             <div class="edu-dates">2015 — 2018</div>
             <div class="edu-school">University of Manchester</div>
-            <div class="edu-focus">Reservoir history matching, inverse problems, and machine learning — supervised by Oliver Dorn. Introduced the CCR (Cluster Classify Regress) framework for discontinuous function learning.</div>
+            <div class="edu-focus">Reservoir history matching, inverse problems, and machine learning — supervised by Oliver Dorn, with co-supervisors Rossmary Villegas and Masoud Babaei. Introduced the CCR (Cluster Classify Regress) framework for discontinuous function learning.</div>
             <div class="edu-eq"><span class="eq-render" data-eq="\hat{u} = \arg\min_{u}\ \|G(u) - y\|^2_{\Gamma} + \mathcal{R}(u)"></span></div>
           </div>
         </div>
@@ -1142,24 +1089,6 @@
         katex.render(el.getAttribute('data-eq'), el, { throwOnError: false, displayMode: false });
       } catch (e) { console.warn('KaTeX render failed', e); }
     });
-
-    // Build the equation ticker (duplicated once for seamless loop)
-    const equations = [
-      '\\pi(u \\mid y) \\propto \\exp\\!\\left(-\\tfrac{1}{2}\\|G(u)-y\\|^2_{\\Gamma}\\right)\\pi_0(u)',
-      '\\partial_t(\\phi S_\\alpha) + \\nabla\\cdot F_\\alpha(S,p,K) = q_\\alpha',
-      'u_i^{a} = u_i^{f} + K\\left(y_i - G(u_i^{f})\\right)',
-      '\\hat{u} = \\arg\\min_u \\ \\|G(u)-y\\|^2_{\\Gamma} + \\mathcal{R}(u)',
-      'q = -\\dfrac{kA}{\\mu}\\dfrac{dp}{dx}'
-    ];
-    const track = document.getElementById('eqTicker');
-    if (track) {
-      const build = () => equations.forEach(eq => {
-        const span = document.createElement('span');
-        katex.render(eq, span, { throwOnError: false, displayMode: false });
-        track.appendChild(span);
-      });
-      build(); build(); // duplicate for seamless -50% loop
-    }
 
     // Scroll reveal
     const reveals = document.querySelectorAll('.reveal');
