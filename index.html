@@ -55,15 +55,19 @@
     .blob-2 { width: 400px; height: 400px; background: rgba(123,97,255,0.05); bottom: 20%; left: -100px; }
 
     /* ── GRAPH-PAPER MOTIF (hero only) ── */
-    #hero {
-      position: relative;
+    #hero { position: relative; }
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
       background-image:
-        linear-gradient(rgba(0,229,160,0.045) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,229,160,0.045) 1px, transparent 1px);
+        linear-gradient(rgba(0,229,160,0.09) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,160,0.09) 1px, transparent 1px);
       background-size: 48px 48px;
       background-position: center top;
-      -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, black 40%, transparent 90%);
-              mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, black 40%, transparent 90%);
+      -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 28%, black 0%, transparent 75%);
+              mask-image: radial-gradient(ellipse 70% 60% at 50% 28%, black 0%, transparent 75%);
     }
 
     /* Faint floating math glyphs — signature decorative touch, used sparingly */
@@ -191,38 +195,51 @@
 
     /* Equation ticker — the site's signature mathematical motif */
     .eq-ticker {
+      position: relative;
       overflow: hidden;
       white-space: nowrap;
       border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
       background: var(--surface);
-      padding: 16px 0;
+      padding: 18px 0;
       margin-bottom: 40px;
       animation: fadeUp 0.8s 0.6s ease both;
     }
-    .eq-ticker-track {
-      display: inline-block;
-      animation: ticker 42s linear infinite;
+    .eq-ticker::before,
+    .eq-ticker::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 60px;
+      z-index: 2;
+      pointer-events: none;
     }
+    .eq-ticker::before { left: 0; background: linear-gradient(to right, var(--surface), transparent); }
+    .eq-ticker::after   { right: 0; background: linear-gradient(to left, var(--surface), transparent); }
+    .eq-ticker-track {
+      display: inline-flex;
+      width: max-content;
+      animation: ticker 75s linear infinite;
+    }
+    .eq-ticker:hover .eq-ticker-track { animation-play-state: paused; }
     .eq-ticker-track span {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
       font-family: 'Cormorant Garamond', serif;
       font-style: italic;
-      font-size: 19px;
+      font-size: 18px;
       color: var(--text);
-      padding: 0 40px;
+      padding: 0 36px;
       position: relative;
+      white-space: nowrap;
     }
     .eq-ticker-track span::after {
       content: '◆';
       font-family: 'DM Mono', monospace;
       font-style: normal;
-      font-size: 8px;
+      font-size: 7px;
       color: var(--accent);
-      position: absolute;
-      right: -4px;
-      top: 50%;
-      transform: translateY(-50%);
+      margin-left: 36px;
     }
     @keyframes ticker {
       from { transform: translateX(0); }
@@ -731,9 +748,11 @@
 
   <!-- HERO -->
   <section id="hero">
-    <span class="math-glyph glyph-1">∇·F</span>
-    <span class="math-glyph glyph-2">π(u|y)</span>
-    <span class="math-glyph glyph-3">Σ</span>
+    <div class="hero-grid">
+      <span class="math-glyph glyph-1">∇·F</span>
+      <span class="math-glyph glyph-2">π(u|y)</span>
+      <span class="math-glyph glyph-3">Σ</span>
+    </div>
     <div class="container">
       <div class="hero-inner">
         <div>
@@ -803,7 +822,7 @@
             noisy observations <em>y</em>, recover the unknown parameter field <em>u</em> by characterising
             the posterior
           </p>
-          <div class="about-eq"><span class="eq-render" data-eq="\\pi(u \\mid y) \\;\\propto\\; \\exp\\!\\left(-\\tfrac{1}{2}\\|G(u) - y\\|^2_{\\Gamma}\\right)\\,\\pi_0(u)"></span></div>
+          <div class="about-eq"><span class="eq-render" data-eq="\pi(u \mid y) \;\propto\; \exp\!\left(-\tfrac{1}{2}\|G(u) - y\|^2_{\Gamma}\right)\,\pi_0(u)"></span></div>
           <p>
             where <em>G</em> : <em>u</em> ↦ <em>y</em> is the forward operator — classically a full
             black-oil PDE solve, now replaced by a learned neural surrogate. This work is applied directly
@@ -817,7 +836,7 @@
             Norne field black-oil benchmark (46×112×22 grid, multi-phase, multi-well), solving the
             parametric PDE family
           </p>
-          <div class="about-eq"><span class="eq-render" data-eq="\\partial_t(\\phi S_\\alpha) + \\nabla\\!\\cdot\\!F_\\alpha(S, p, K) = q_\\alpha"></span></div>
+          <div class="about-eq"><span class="eq-render" data-eq="\partial_t(\phi S_\alpha) + \nabla\!\cdot\!F_\alpha(S, p, K) = q_\alpha"></span></div>
           <p>
             across thousands of permeability realisations in a single forward pass, achieving up to
             <strong>6000× speedup</strong> over conventional simulators. I contribute to the
@@ -868,7 +887,7 @@
             <div class="edu-dates">2018 — 2020</div>
             <div class="edu-school">University of Manchester</div>
             <div class="edu-focus">Ensemble-based data assimilation and Bayesian inverse problems, continuing work with K.J.H. Law on scalable Kalman-type updates for high-dimensional inference.</div>
-            <div class="edu-eq"><span class="eq-render" data-eq="u_i^{a} = u_i^{f} + K\\left(y_i - G(u_i^{f})\\right)"></span></div>
+            <div class="edu-eq"><span class="eq-render" data-eq="u_i^{a} = u_i^{f} + K\left(y_i - G(u_i^{f})\right)"></span></div>
           </div>
         </div>
 
@@ -884,7 +903,7 @@
             <div class="edu-dates">2015 — 2018</div>
             <div class="edu-school">University of Manchester</div>
             <div class="edu-focus">Reservoir history matching, inverse problems, and machine learning — supervised by Oliver Dorn. Introduced the CCR (Cluster Classify Regress) framework for discontinuous function learning.</div>
-            <div class="edu-eq"><span class="eq-render" data-eq="\\hat{u} = \\arg\\min_{u}\\ \\|G(u) - y\\|^2_{\\Gamma} + \\mathcal{R}(u)"></span></div>
+            <div class="edu-eq"><span class="eq-render" data-eq="\hat{u} = \arg\min_{u}\ \|G(u) - y\|^2_{\Gamma} + \mathcal{R}(u)"></span></div>
           </div>
         </div>
 
@@ -900,7 +919,7 @@
             <div class="edu-dates">2013 — 2014</div>
             <div class="edu-school">Robert Gordon University</div>
             <div class="edu-focus">Reservoir engineering, well testing, and multiphase flow in porous media — the applied foundation that would later motivate a mathematical treatment of history matching.</div>
-            <div class="edu-eq"><span class="eq-render" data-eq="q = -\\dfrac{kA}{\\mu}\\dfrac{dp}{dx}"></span></div>
+            <div class="edu-eq"><span class="eq-render" data-eq="q = -\dfrac{kA}{\mu}\dfrac{dp}{dx}"></span></div>
           </div>
         </div>
 
@@ -918,7 +937,7 @@
             <div class="edu-dates">2005 — 2010</div>
             <div class="edu-school">University of Lagos</div>
             <div class="edu-focus">Process systems, thermodynamics, and transport phenomena — first exposure to the conservation laws that underpin every reservoir and flow model since.</div>
-            <div class="edu-eq"><span class="eq-render" data-eq="\\dfrac{dm}{dt} = \\sum \\dot{m}_{in} - \\sum \\dot{m}_{out}"></span></div>
+            <div class="edu-eq"><span class="eq-render" data-eq="\dfrac{dm}{dt} = \sum \dot{m}_{in} - \sum \dot{m}_{out}"></span></div>
           </div>
         </div>
 
