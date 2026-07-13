@@ -6,6 +6,7 @@
   <title>Clement Etienam</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -16,7 +17,7 @@
       --accent: #00e5a0;
       --accent2: #7b61ff;
       --text: #e8e6e3;
-      --muted: #6b6a68;
+      --muted: #8a8987;
       --tag-bg: rgba(0,229,160,0.08);
     }
 
@@ -26,7 +27,7 @@
       background: var(--bg);
       color: var(--text);
       font-family: 'DM Mono', monospace;
-      font-size: 14px;
+      font-size: 15px;
       line-height: 1.6;
       overflow-x: hidden;
     }
@@ -52,6 +53,33 @@
     }
     .blob-1 { width: 500px; height: 500px; background: rgba(0,229,160,0.04); top: -100px; right: -100px; }
     .blob-2 { width: 400px; height: 400px; background: rgba(123,97,255,0.05); bottom: 20%; left: -100px; }
+
+    /* ── GRAPH-PAPER MOTIF (hero only) ── */
+    #hero {
+      position: relative;
+      background-image:
+        linear-gradient(rgba(0,229,160,0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,160,0.045) 1px, transparent 1px);
+      background-size: 48px 48px;
+      background-position: center top;
+      -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, black 40%, transparent 90%);
+              mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, black 40%, transparent 90%);
+    }
+
+    /* Faint floating math glyphs — signature decorative touch, used sparingly */
+    .math-glyph {
+      position: absolute;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      color: var(--accent);
+      opacity: 0.06;
+      pointer-events: none;
+      z-index: 0;
+      user-select: none;
+    }
+    .glyph-1 { top: 12%; left: 4%; font-size: 140px; }
+    .glyph-2 { bottom: 8%; right: 6%; font-size: 110px; color: var(--accent2); }
+    .glyph-3 { top: 55%; left: 88%; font-size: 60px; }
 
     /* ── NAV ── */
     nav {
@@ -101,7 +129,7 @@
     section { padding: 100px 0; }
 
     /* ── HERO ── */
-    #hero {
+    #hero .container {
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -114,6 +142,8 @@
       gap: 80px;
       align-items: center;
       width: 100%;
+      position: relative;
+      z-index: 1;
     }
 
     .hero-label {
@@ -151,12 +181,55 @@
 
     .hero-desc {
       font-family: 'DM Mono', monospace;
-      font-size: 13px;
+      font-size: 14.5px;
       color: var(--muted);
-      line-height: 1.8;
+      line-height: 1.9;
       max-width: 520px;
-      margin-bottom: 48px;
+      margin-bottom: 40px;
       animation: fadeUp 0.8s 0.5s ease both;
+    }
+
+    /* Equation ticker — the site's signature mathematical motif */
+    .eq-ticker {
+      overflow: hidden;
+      white-space: nowrap;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      padding: 16px 0;
+      margin-bottom: 40px;
+      animation: fadeUp 0.8s 0.6s ease both;
+    }
+    .eq-ticker-track {
+      display: inline-block;
+      animation: ticker 42s linear infinite;
+    }
+    .eq-ticker-track span {
+      display: inline-block;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 19px;
+      color: var(--text);
+      padding: 0 40px;
+      position: relative;
+    }
+    .eq-ticker-track span::after {
+      content: '◆';
+      font-family: 'DM Mono', monospace;
+      font-style: normal;
+      font-size: 8px;
+      color: var(--accent);
+      position: absolute;
+      right: -4px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .eq-ticker-track { animation: none; }
     }
 
     .hero-tags {
@@ -164,7 +237,7 @@
       flex-wrap: wrap;
       gap: 8px;
       margin-bottom: 48px;
-      animation: fadeUp 0.8s 0.6s ease both;
+      animation: fadeUp 0.8s 0.65s ease both;
     }
     .tag {
       padding: 5px 14px;
@@ -299,12 +372,23 @@
     }
 
     .about-text p {
-      font-size: 13px;
+      font-size: 15.5px;
       color: var(--muted);
-      line-height: 2;
-      margin-bottom: 20px;
+      line-height: 2.05;
+      margin-bottom: 22px;
     }
     .about-text p strong { color: var(--text); font-weight: 500; }
+
+    .about-eq {
+      margin: 8px 0 26px;
+      padding: 18px 22px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--accent);
+      overflow-x: auto;
+      text-align: center;
+    }
+    .about-eq .katex { font-size: 1.05em; color: var(--text); }
 
     .stats-grid {
       display: grid;
@@ -331,6 +415,104 @@
       color: var(--muted);
       letter-spacing: 0.1em;
       text-transform: uppercase;
+    }
+
+    /* ── EDUCATION ── */
+    .edu-timeline {
+      position: relative;
+      padding-left: 0;
+    }
+    .edu-timeline::before {
+      content: '';
+      position: absolute;
+      left: 27px;
+      top: 10px;
+      bottom: 10px;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--accent), var(--border) 85%, transparent);
+    }
+    .edu-item {
+      position: relative;
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 32px;
+      padding: 30px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .edu-item:last-child { border-bottom: none; }
+
+    .edu-marker {
+      position: relative;
+      z-index: 1;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.25s;
+    }
+    .edu-item:hover .edu-marker { border-color: var(--accent); }
+    .edu-marker svg { width: 26px; height: 26px; }
+
+    .edu-content {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px 32px;
+    }
+    .edu-dates {
+      grid-column: 2;
+      grid-row: 1;
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+      padding-top: 6px;
+      text-align: right;
+    }
+    .edu-degree {
+      grid-column: 1;
+      grid-row: 1;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 400;
+      color: var(--text);
+      line-height: 1.25;
+    }
+    .edu-school {
+      grid-column: 1 / -1;
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent2);
+      letter-spacing: 0.02em;
+    }
+    .edu-focus {
+      grid-column: 1 / -1;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.8;
+      max-width: 640px;
+    }
+    .edu-eq {
+      grid-column: 1 / -1;
+      margin-top: 6px;
+      padding: 12px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: inline-block;
+      width: fit-content;
+      max-width: 100%;
+      overflow-x: auto;
+    }
+    .edu-eq .katex { font-size: 0.95em; color: var(--text); }
+
+    @media (max-width: 640px) {
+      .edu-content { grid-template-columns: 1fr; }
+      .edu-dates { grid-column: 1; grid-row: 2; text-align: left; padding-top: 0; }
+      .edu-degree { grid-row: 1; }
     }
 
     /* ── PUBLICATIONS ── */
@@ -365,24 +547,24 @@
     .pub-body { flex: 1; }
     .pub-title {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 20px;
+      font-size: 21px;
       font-weight: 400;
-      line-height: 1.3;
-      margin-bottom: 8px;
+      line-height: 1.35;
+      margin-bottom: 9px;
       color: var(--text);
     }
     .pub-authors {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--muted);
       margin-bottom: 10px;
-      line-height: 1.6;
+      line-height: 1.7;
     }
     .pub-authors strong { color: var(--text); }
     .pub-venue {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-size: 10px;
+      font-size: 10.5px;
       color: var(--accent2);
       text-transform: uppercase;
       letter-spacing: 0.1em;
@@ -433,9 +615,9 @@
       color: var(--text);
     }
     .repo-desc {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--muted);
-      line-height: 1.7;
+      line-height: 1.75;
       margin-bottom: 16px;
     }
     .repo-meta {
@@ -478,7 +660,7 @@
       font-size: 13px;
       font-weight: 600;
     }
-    .connect-sub { font-size: 11px; color: var(--muted); }
+    .connect-sub { font-size: 12px; color: var(--muted); }
 
     /* ── FOOTER ── */
     footer {
@@ -526,6 +708,7 @@
       .connect-grid { grid-template-columns: 1fr 1fr; }
       .pub-item { grid-template-columns: 1fr; gap: 8px; }
       .pub-arrow { display: none; }
+      .math-glyph { display: none; }
     }
   </style>
 </head>
@@ -539,6 +722,7 @@
     <a href="#hero" class="nav-logo">CE<span>.</span></a>
     <div class="nav-links">
       <a href="#about">About</a>
+      <a href="#education">Education</a>
       <a href="#publications">Research</a>
       <a href="#code">Code</a>
       <a href="#connect">Connect</a>
@@ -547,6 +731,9 @@
 
   <!-- HERO -->
   <section id="hero">
+    <span class="math-glyph glyph-1">∇·F</span>
+    <span class="math-glyph glyph-2">π(u|y)</span>
+    <span class="math-glyph glyph-3">Σ</span>
     <div class="container">
       <div class="hero-inner">
         <div>
@@ -556,6 +743,11 @@
             GPU-accelerated reservoir simulation, physics-informed neural operators, and Bayesian inverse problems.
             Building the next generation of scientific machine learning for subsurface flow and carbon capture.
           </p>
+
+          <div class="eq-ticker">
+            <div class="eq-ticker-track" id="eqTicker"></div>
+          </div>
+
           <div class="hero-tags">
             <span class="tag">Physics Informed neural Operator</span>
             <span class="tag">HPC</span>
@@ -611,9 +803,7 @@
             noisy observations <em>y</em>, recover the unknown parameter field <em>u</em> by characterising
             the posterior
           </p>
-          <p style="text-align:center; font-family:'Cormorant Garamond',serif; font-size:17px; color:var(--text); letter-spacing:0.02em; margin: 4px 0 4px;">
-            π(<em>u</em> | <em>y</em>) ∝ exp(−½‖<em>G</em>(<em>u</em>) − <em>y</em>‖²<sub>Γ</sub>) · π₀(<em>u</em>)
-          </p>
+          <div class="about-eq"><span class="eq-render" data-eq="\\pi(u \\mid y) \\;\\propto\\; \\exp\\!\\left(-\\tfrac{1}{2}\\|G(u) - y\\|^2_{\\Gamma}\\right)\\,\\pi_0(u)"></span></div>
           <p>
             where <em>G</em> : <em>u</em> ↦ <em>y</em> is the forward operator — classically a full
             black-oil PDE solve, now replaced by a learned neural surrogate. This work is applied directly
@@ -627,9 +817,7 @@
             Norne field black-oil benchmark (46×112×22 grid, multi-phase, multi-well), solving the
             parametric PDE family
           </p>
-          <p style="text-align:center; font-family:'Cormorant Garamond',serif; font-size:17px; color:var(--text); letter-spacing:0.02em; margin: 4px 0 4px;">
-            ∂<sub>t</sub>(<em>φ S<sub>α</sub></em>) + ∇·<em>F<sub>α</sub></em>(<em>S</em>, <em>p</em>, <em>K</em>) = <em>q<sub>α</sub></em>
-          </p>
+          <div class="about-eq"><span class="eq-render" data-eq="\\partial_t(\\phi S_\\alpha) + \\nabla\\!\\cdot\\!F_\\alpha(S, p, K) = q_\\alpha"></span></div>
           <p>
             across thousands of permeability realisations in a single forward pass, achieving up to
             <strong>6000× speedup</strong> over conventional simulators. I contribute to the
@@ -658,11 +846,91 @@
     </div>
   </section>
 
+  <!-- EDUCATION -->
+  <section id="education">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-num">02 —</span>
+        <h2>Education</h2>
+      </div>
+      <hr class="section-rule">
+      <div class="edu-timeline">
+
+        <div class="edu-item reveal">
+          <div class="edu-marker">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#00e5a0" stroke-width="1.4">
+              <circle cx="12" cy="12" r="9.5"/>
+              <path d="M8 13l3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="edu-content">
+            <div class="edu-degree">Postdoctoral Research<br>Applied Mathematics</div>
+            <div class="edu-dates">2018 — 2020</div>
+            <div class="edu-school">University of Manchester</div>
+            <div class="edu-focus">Ensemble-based data assimilation and Bayesian inverse problems, continuing work with K.J.H. Law on scalable Kalman-type updates for high-dimensional inference.</div>
+            <div class="edu-eq"><span class="eq-render" data-eq="u_i^{a} = u_i^{f} + K\\left(y_i - G(u_i^{f})\\right)"></span></div>
+          </div>
+        </div>
+
+        <div class="edu-item reveal">
+          <div class="edu-marker">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#00e5a0" stroke-width="1.4">
+              <path d="M12 3l9 5-9 5-9-5 9-5z"/>
+              <path d="M6 10.5v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="edu-content">
+            <div class="edu-degree">Ph.D. Applied Mathematics</div>
+            <div class="edu-dates">2015 — 2018</div>
+            <div class="edu-school">University of Manchester</div>
+            <div class="edu-focus">Reservoir history matching, inverse problems, and machine learning — supervised by Oliver Dorn. Introduced the CCR (Cluster Classify Regress) framework for discontinuous function learning.</div>
+            <div class="edu-eq"><span class="eq-render" data-eq="\\hat{u} = \\arg\\min_{u}\\ \\|G(u) - y\\|^2_{\\Gamma} + \\mathcal{R}(u)"></span></div>
+          </div>
+        </div>
+
+        <div class="edu-item reveal">
+          <div class="edu-marker">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#7b61ff" stroke-width="1.4">
+              <rect x="3.5" y="4" width="17" height="16" rx="1.5"/>
+              <path d="M3.5 9h17M8 4v16" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="edu-content">
+            <div class="edu-degree">M.Sc. Petroleum Engineering</div>
+            <div class="edu-dates">2013 — 2014</div>
+            <div class="edu-school">Robert Gordon University</div>
+            <div class="edu-focus">Reservoir engineering, well testing, and multiphase flow in porous media — the applied foundation that would later motivate a mathematical treatment of history matching.</div>
+            <div class="edu-eq"><span class="eq-render" data-eq="q = -\\dfrac{kA}{\\mu}\\dfrac{dp}{dx}"></span></div>
+          </div>
+        </div>
+
+        <div class="edu-item reveal">
+          <div class="edu-marker">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#7b61ff" stroke-width="1.4">
+              <circle cx="7" cy="7" r="3"/>
+              <circle cx="17" cy="7" r="3"/>
+              <circle cx="12" cy="17" r="3"/>
+              <path d="M9 9l2 6M15 9l-2 6M9.8 7h4.4" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="edu-content">
+            <div class="edu-degree">B.Sc. Chemical Engineering</div>
+            <div class="edu-dates">2005 — 2010</div>
+            <div class="edu-school">University of Lagos</div>
+            <div class="edu-focus">Process systems, thermodynamics, and transport phenomena — first exposure to the conservation laws that underpin every reservoir and flow model since.</div>
+            <div class="edu-eq"><span class="eq-render" data-eq="\\dfrac{dm}{dt} = \\sum \\dot{m}_{in} - \\sum \\dot{m}_{out}"></span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
   <!-- PUBLICATIONS -->
   <section id="publications">
     <div class="container">
       <div class="section-header reveal">
-        <span class="section-num">02 —</span>
+        <span class="section-num">03 —</span>
         <h2>Research</h2>
       </div>
       <hr class="section-rule">
@@ -756,7 +1024,7 @@
   <section id="code">
     <div class="container">
       <div class="section-header reveal">
-        <span class="section-num">03 —</span>
+        <span class="section-num">04 —</span>
         <h2>Code</h2>
       </div>
       <hr class="section-rule">
@@ -810,7 +1078,7 @@
   <section id="connect">
     <div class="container">
       <div class="section-header reveal">
-        <span class="section-num">04 —</span>
+        <span class="section-num">05 —</span>
         <h2>Connect</h2>
       </div>
       <hr class="section-rule">
@@ -847,7 +1115,33 @@
     </div>
   </footer>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
   <script>
+    // Render all KaTeX equations
+    document.querySelectorAll('.eq-render').forEach(el => {
+      try {
+        katex.render(el.getAttribute('data-eq'), el, { throwOnError: false, displayMode: false });
+      } catch (e) { console.warn('KaTeX render failed', e); }
+    });
+
+    // Build the equation ticker (duplicated once for seamless loop)
+    const equations = [
+      '\\pi(u \\mid y) \\propto \\exp\\!\\left(-\\tfrac{1}{2}\\|G(u)-y\\|^2_{\\Gamma}\\right)\\pi_0(u)',
+      '\\partial_t(\\phi S_\\alpha) + \\nabla\\cdot F_\\alpha(S,p,K) = q_\\alpha',
+      'u_i^{a} = u_i^{f} + K\\left(y_i - G(u_i^{f})\\right)',
+      '\\hat{u} = \\arg\\min_u \\ \\|G(u)-y\\|^2_{\\Gamma} + \\mathcal{R}(u)',
+      'q = -\\dfrac{kA}{\\mu}\\dfrac{dp}{dx}'
+    ];
+    const track = document.getElementById('eqTicker');
+    if (track) {
+      const build = () => equations.forEach(eq => {
+        const span = document.createElement('span');
+        katex.render(eq, span, { throwOnError: false, displayMode: false });
+        track.appendChild(span);
+      });
+      build(); build(); // duplicate for seamless -50% loop
+    }
+
     // Scroll reveal
     const reveals = document.querySelectorAll('.reveal');
     const observer = new IntersectionObserver((entries) => {
@@ -861,7 +1155,7 @@
     reveals.forEach(el => observer.observe(el));
 
     // Stagger siblings
-    document.querySelectorAll('.pub-list, .repos-grid, .connect-grid').forEach(container => {
+    document.querySelectorAll('.pub-list, .repos-grid, .connect-grid, .edu-timeline').forEach(container => {
       const children = container.querySelectorAll('.reveal');
       children.forEach((child, i) => {
         child.style.transitionDelay = `${i * 60}ms`;
