@@ -347,6 +347,17 @@
     }
     .about-text p strong { color: var(--text); font-weight: 500; }
 
+    .inline-link {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .inline-link:hover {
+      color: var(--accent);
+      border-color: currentColor;
+    }
+
     .about-eq {
       margin: 8px 0 26px;
       padding: 18px 22px;
@@ -457,6 +468,13 @@
       color: var(--accent2);
       letter-spacing: 0.02em;
     }
+    .edu-school a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s, opacity 0.2s;
+    }
+    .edu-school a:hover { border-color: currentColor; }
     .edu-focus {
       grid-column: 1 / -1;
       font-size: 13px;
@@ -726,7 +744,7 @@
     <div class="container">
       <div class="hero-inner">
         <div>
-          <div class="hero-label">Senior DevTech Engineer · NVIDIA</div>
+          <div class="hero-label">Senior DevTech Engineer · <a href="https://www.nvidia.com/en-us/industries/energy/" target="_blank" class="inline-link">NVIDIA</a></div>
           <h1>Clement<br><em>Etienam</em><br>Ph.D.</h1>
           <p class="hero-desc">
             GPU-accelerated reservoir simulation, physics-informed neural operators, and Bayesian inverse problems.
@@ -775,14 +793,14 @@
       <div class="about-grid">
         <div class="about-text reveal">
           <p>
-            I am a <strong>Senior DevTech Engineer in the Energy team at NVIDIA</strong>, working at the
+            I am a <strong>Senior DevTech Engineer in the <a href="https://www.nvidia.com/en-us/industries/energy/" target="_blank" class="inline-link">Energy team at NVIDIA</a></strong>, working at the
             intersection of GPU computing, scientific machine learning, and subsurface physics. My research
             focuses on making physics-informed neural operators fast and accurate enough to replace traditional
             numerical simulators in real-world energy workflows — from reservoir management to carbon capture
             and storage at scale.
           </p>
           <p>
-            My PhD at the <strong>University of Manchester</strong> (main supervisor Rossmary Villegas, with
+            My PhD at the <strong><a href="https://www.manchester.ac.uk/" target="_blank" class="inline-link">University of Manchester</a></strong> (main supervisor Rossmary Villegas, with
             co-supervisors Oliver Dorn, Masoud Babaei, and Constantinos Theodoropoulos, and a postdoc under
             K.J.H. Law, joint between the University of Manchester and Oak Ridge National Laboratory) focused on
             reservoir history matching, inverse problems, and parametrizing unknown geological fields with
@@ -858,7 +876,7 @@
           <div class="edu-content">
             <div class="edu-degree">Postdoctoral Research<br>Applied Mathematics</div>
             <div class="edu-dates">2018 — 2020</div>
-            <div class="edu-school">Oak Ridge National Laboratory &amp; University of Manchester</div>
+            <div class="edu-school"><a href="https://www.ornl.gov/" target="_blank">Oak Ridge National Laboratory</a> &amp; <a href="https://www.manchester.ac.uk/" target="_blank">University of Manchester</a></div>
             <div class="edu-focus">Developed the CCR (Cluster Classify Regress) framework for learning highly nonlinear, discontinuous functions across sharp phase boundaries — a persistent failure mode for standard regression methods. Supervised by K.J.H. Law.</div>
             <div class="edu-eq"><span class="eq-render" data-eq="\hat{y}(x) = f_{c(x)}(x), \qquad c(x) = \arg\max_k\ P(k \mid x)"></span></div>
           </div>
@@ -874,7 +892,7 @@
           <div class="edu-content">
             <div class="edu-degree">Ph.D. Applied Mathematics</div>
             <div class="edu-dates">2015 — 2018</div>
-            <div class="edu-school">University of Manchester</div>
+            <div class="edu-school"><a href="https://www.manchester.ac.uk/" target="_blank">University of Manchester</a></div>
             <div class="edu-focus">Reservoir history matching and inverse problems, parametrizing unknown geological fields with exotic generative priors — VAE, DCT, and K-SVD dictionary learning — main supervisor Rossmary Villegas, with co-supervisors Oliver Dorn, Masoud Babaei, and Constantinos Theodoropoulos.</div>
             <div class="edu-eq"><span class="eq-render" data-eq="\hat{u} = \arg\min_{u}\ \|G(u) - y\|^2_{\Gamma} + \mathcal{R}(u)"></span></div>
             <a href="https://research.manchester.ac.uk/files/93526730/FULL_TEXT.PDF" target="_blank" class="edu-thesis-link">Read the full thesis (PDF) →</a>
@@ -891,7 +909,7 @@
           <div class="edu-content">
             <div class="edu-degree">M.Sc. Petroleum Engineering</div>
             <div class="edu-dates">2013 — 2014</div>
-            <div class="edu-school">Robert Gordon University</div>
+            <div class="edu-school"><a href="https://www.rgu.ac.uk/" target="_blank">Robert Gordon University</a></div>
             <div class="edu-focus">M.Sc. thesis: dynamic modelling for haptic feedback in well drilling operations — supervised by Wei Kung-Fung. First formal exposure to dynamical systems and feedback control, ahead of the applied mathematics that followed.</div>
             <div class="edu-eq"><span class="eq-render" data-eq="M\ddot{x} + C\dot{x} + Kx = F(t)"></span></div>
           </div>
@@ -909,7 +927,7 @@
           <div class="edu-content">
             <div class="edu-degree">B.Sc. Chemical Engineering</div>
             <div class="edu-dates">2005 — 2010</div>
-            <div class="edu-school">University of Lagos</div>
+            <div class="edu-school"><a href="https://unilag.edu.ng/" target="_blank">University of Lagos</a></div>
             <div class="edu-focus">Process systems, thermodynamics, and transport phenomena — first exposure to the conservation laws that underpin every reservoir and flow model since.</div>
             <div class="edu-eq"><span class="eq-render" data-eq="\dfrac{dm}{dt} = \sum \dot{m}_{in} - \sum \dot{m}_{out}"></span></div>
           </div>
@@ -1103,7 +1121,7 @@
   <!-- FOOTER -->
   <footer>
     <div class="container">
-      <p>© 2026 Clement Etienam — <span>NVIDIA Energy DevTech</span></p>
+      <p>© 2026 Clement Etienam — <span><a href="https://www.nvidia.com/en-us/industries/energy/" target="_blank" style="color:inherit; text-decoration:none;">NVIDIA Energy DevTech</a></span></p>
       <p>United Kingdom · <span>Psalm 50:15</span></p>
     </div>
   </footer>
