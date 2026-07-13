@@ -764,20 +764,26 @@
           </p>
           <p>
             My PhD at the <strong>University of Manchester</strong> (supervised by Oliver Dorn, with
-            co-supervisors Rossmary Villegas and Masoud Babaei, and a postdoc under Kody Law) established a deep foundation in Bayesian inverse
-            problems, ensemble Kalman methods, and surrogate modelling. The central challenge: given
-            noisy observations <em>y</em>, recover the unknown parameter field <em>u</em> by characterising
-            the posterior
+            co-supervisors Rossmary Villegas and Masoud Babaei, and a postdoc under Kody Law) focused on
+            reservoir history matching, inverse problems, and parametrizing unknown geological fields with
+            <strong>exotic generative priors</strong> — variational autoencoders (VAE), the discrete cosine
+            transform (DCT), and K-SVD dictionary learning — to regularize otherwise severely ill-posed
+            inversions. The central challenge: given noisy observations <em>y</em>, recover the unknown
+            parameter field <em>u</em> by characterising the posterior
           </p>
           <div class="about-eq"><span class="eq-render" data-eq="\pi(u \mid y) \;\propto\; \exp\!\left(-\tfrac{1}{2}\|G(u) - y\|^2_{\Gamma}\right)\,\pi_0(u)"></span></div>
           <p>
-            where <em>G</em> : <em>u</em> ↦ <em>y</em> is the forward operator — classically a full
-            black-oil PDE solve, now replaced by a learned neural surrogate. This work is applied directly
-            to reservoir history matching, CO₂ plume migration, and ensemble-based inversion (ES-MDA, aREKI)
-            with generative priors.
+            with the field itself reparametrized through a low-dimensional generative code,
+          </p>
+          <div class="about-eq"><span class="eq-render" data-eq="u = \mathcal{D}(z), \qquad z \sim \pi_0"></span></div>
+          <p>
+            where <em>D</em> is a decoder learned via VAE, DCT, or K-SVD, and <em>G</em> : <em>u</em> ↦ <em>y</em>
+            is the forward operator — classically a full black-oil PDE solve, now replaced by a learned neural
+            surrogate. This work is applied directly to reservoir history matching, CO₂ plume migration, and
+            ensemble-based inversion (ES-MDA, aREKI) with generative priors.
           </p>
           <p>
-            I developed the <strong>CCR (Cluster Classify Regress)</strong> framework for learning highly
+            During my postdoc, I developed the <strong>CCR (Cluster Classify Regress)</strong> framework for learning highly
             nonlinear discontinuous functions across sharp phase boundaries — a persistent failure mode for
             standard regression. Building on this, I have applied PINO and FNO-based surrogates to the
             Norne field black-oil benchmark (46×112×22 grid, multi-phase, multi-well), solving the
@@ -833,8 +839,8 @@
             <div class="edu-degree">Postdoctoral Research<br>Applied Mathematics</div>
             <div class="edu-dates">2018 — 2020</div>
             <div class="edu-school">University of Manchester</div>
-            <div class="edu-focus">Ensemble-based data assimilation and Bayesian inverse problems, continuing work with K.J.H. Law on scalable Kalman-type updates for high-dimensional inference.</div>
-            <div class="edu-eq"><span class="eq-render" data-eq="u_i^{a} = u_i^{f} + K\left(y_i - G(u_i^{f})\right)"></span></div>
+            <div class="edu-focus">Developed the CCR (Cluster Classify Regress) framework for learning highly nonlinear, discontinuous functions across sharp phase boundaries — a persistent failure mode for standard regression methods.</div>
+            <div class="edu-eq"><span class="eq-render" data-eq="\hat{y}(x) = f_{c(x)}(x), \qquad c(x) = \arg\max_k\ P(k \mid x)"></span></div>
           </div>
         </div>
 
@@ -849,7 +855,7 @@
             <div class="edu-degree">Ph.D. Applied Mathematics</div>
             <div class="edu-dates">2015 — 2018</div>
             <div class="edu-school">University of Manchester</div>
-            <div class="edu-focus">Reservoir history matching, inverse problems, and machine learning — supervised by Oliver Dorn, with co-supervisors Rossmary Villegas and Masoud Babaei. Introduced the CCR (Cluster Classify Regress) framework for discontinuous function learning.</div>
+            <div class="edu-focus">Reservoir history matching and inverse problems, parametrizing unknown geological fields with exotic generative priors — VAE, DCT, and K-SVD dictionary learning — supervised by Oliver Dorn, with co-supervisors Rossmary Villegas and Masoud Babaei.</div>
             <div class="edu-eq"><span class="eq-render" data-eq="\hat{u} = \arg\min_{u}\ \|G(u) - y\|^2_{\Gamma} + \mathcal{R}(u)"></span></div>
           </div>
         </div>
