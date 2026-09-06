@@ -9,14 +9,12 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     /* KaTeX relies on unmodified box sizing/margins for its internal spans
        (fraction bars, delimiters, sub/superscripts) — exclude it from the reset above */
     .katex, .katex * {
       box-sizing: content-box !important;
     }
     .katex { margin: 0; }
-
     :root {
       --bg: #0a0a0b;
       --surface: #111114;
@@ -27,9 +25,7 @@
       --muted: #8a8987;
       --tag-bg: rgba(0,229,160,0.08);
     }
-
     html { scroll-behavior: smooth; }
-
     body {
       background: var(--bg);
       color: var(--text);
@@ -38,7 +34,6 @@
       line-height: 1.6;
       overflow-x: hidden;
     }
-
     /* ── NOISE OVERLAY ── */
     body::before {
       content: '';
@@ -49,7 +44,6 @@
       z-index: 9999;
       opacity: 0.4;
     }
-
     /* ── GLOW BLOBS ── */
     .glow-blob {
       position: fixed;
@@ -60,7 +54,6 @@
     }
     .blob-1 { width: 500px; height: 500px; background: rgba(0,229,160,0.04); top: -100px; right: -100px; }
     .blob-2 { width: 400px; height: 400px; background: rgba(123,97,255,0.05); bottom: 20%; left: -100px; }
-
     /* ── GRAPH-PAPER MOTIF (hero only) ── */
     #hero { position: relative; }
     .hero-grid {
@@ -76,7 +69,6 @@
       -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 28%, black 0%, transparent 75%);
               mask-image: radial-gradient(ellipse 70% 60% at 50% 28%, black 0%, transparent 75%);
     }
-
     /* Faint floating math glyphs — signature decorative touch, used sparingly */
     .math-glyph {
       position: absolute;
@@ -91,7 +83,6 @@
     .glyph-1 { top: 12%; left: 4%; font-size: 140px; }
     .glyph-2 { bottom: 8%; right: 6%; font-size: 110px; color: var(--accent2); }
     .glyph-3 { top: 55%; left: 88%; font-size: 60px; }
-
     /* ── NAV ── */
     nav {
       position: fixed;
@@ -106,7 +97,6 @@
       backdrop-filter: blur(20px);
       animation: fadeDown 0.8s ease both;
     }
-
     .nav-logo {
       font-family: 'Syne', sans-serif;
       font-weight: 800;
@@ -116,7 +106,6 @@
       text-decoration: none;
     }
     .nav-logo span { color: var(--accent); }
-
     .nav-links { display: flex; gap: 36px; }
     .nav-links a {
       color: var(--muted);
@@ -127,7 +116,6 @@
       transition: color 0.2s;
     }
     .nav-links a:hover { color: var(--accent); }
-
     /* ── LAYOUT ── */
     .container {
       max-width: 1100px;
@@ -136,9 +124,7 @@
       position: relative;
       z-index: 1;
     }
-
     section { padding: 100px 0; }
-
     /* ── HERO ── */
     #hero .container {
       min-height: 100vh;
@@ -146,7 +132,6 @@
       align-items: center;
       padding-top: 80px;
     }
-
     .hero-inner {
       display: grid;
       grid-template-columns: 1fr 340px;
@@ -156,7 +141,6 @@
       position: relative;
       z-index: 1;
     }
-
     .hero-label {
       font-size: 11px;
       letter-spacing: 0.2em;
@@ -175,7 +159,6 @@
       height: 1px;
       background: var(--accent);
     }
-
     h1 {
       font-family: 'Cormorant Garamond', serif;
       font-size: clamp(52px, 7vw, 88px);
@@ -189,7 +172,6 @@
       font-style: italic;
       color: var(--accent);
     }
-
     .hero-desc {
       font-family: 'DM Mono', monospace;
       font-size: 14.5px;
@@ -199,7 +181,6 @@
       margin-bottom: 40px;
       animation: fadeUp 0.8s 0.5s ease both;
     }
-
     .hero-tags {
       display: flex;
       flex-wrap: wrap;
@@ -217,13 +198,11 @@
       background: var(--tag-bg);
       text-transform: uppercase;
     }
-
     .hero-links {
       display: flex;
       gap: 16px;
       animation: fadeUp 0.8s 0.7s ease both;
     }
-
     .btn {
       display: inline-flex;
       align-items: center;
@@ -250,7 +229,6 @@
       border: 1px solid var(--border);
     }
     .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
-
     /* ── PHOTO CARD ── */
     .photo-card {
       animation: fadeUp 0.8s 0.4s ease both;
@@ -290,7 +268,6 @@
       object-fit: cover;
       display: block;
     }
-
     .photo-badge {
       position: absolute;
       bottom: -16px; right: -16px;
@@ -301,7 +278,6 @@
     }
     .badge-stat { font-size: 24px; font-family: 'Syne', sans-serif; font-weight: 700; color: var(--accent); }
     .badge-label { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
-
     /* ── SECTION HEADERS ── */
     .section-header {
       display: flex;
@@ -327,18 +303,15 @@
       border-top: 1px solid var(--border);
       margin-bottom: 60px;
     }
-
     /* ── ABOUT ── */
     #about { background: var(--surface); }
     #about .container { padding-top: 0; padding-bottom: 0; }
-
     .about-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 80px;
       align-items: start;
     }
-
     .about-text p {
       font-size: 15.5px;
       color: var(--muted);
@@ -346,7 +319,6 @@
       margin-bottom: 22px;
     }
     .about-text p strong { color: var(--text); font-weight: 500; }
-
     .inline-link {
       color: inherit;
       text-decoration: none;
@@ -357,7 +329,6 @@
       color: var(--accent);
       border-color: currentColor;
     }
-
     .about-eq {
       margin: 8px 0 26px;
       padding: 18px 22px;
@@ -368,7 +339,6 @@
       text-align: center;
     }
     .about-eq .katex { font-size: 1.05em; color: var(--text); }
-
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -395,7 +365,6 @@
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
-
     /* ── EDUCATION ── */
     .edu-timeline {
       position: relative;
@@ -419,7 +388,6 @@
       border-bottom: 1px solid var(--border);
     }
     .edu-item:last-child { border-bottom: none; }
-
     .edu-marker {
       position: relative;
       z-index: 1;
@@ -435,7 +403,6 @@
     }
     .edu-item:hover .edu-marker { border-color: var(--accent); }
     .edu-marker svg { width: 26px; height: 26px; }
-
     .edu-content {
       display: grid;
       grid-template-columns: 1fr auto;
@@ -494,7 +461,6 @@
       overflow-x: auto;
     }
     .edu-eq .katex { font-size: 0.95em; color: var(--text); }
-
     .edu-thesis-link {
       grid-column: 1 / -1;
       display: inline-flex;
@@ -513,16 +479,13 @@
       color: var(--accent);
       border-color: var(--accent);
     }
-
     @media (max-width: 640px) {
       .edu-content { grid-template-columns: 1fr; }
       .edu-dates { grid-column: 1; grid-row: 2; text-align: left; padding-top: 0; }
       .edu-degree { grid-row: 1; }
     }
-
     /* ── PUBLICATIONS ── */
     .pub-list { display: flex; flex-direction: column; gap: 2px; }
-
     .pub-item {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -539,7 +502,6 @@
       border-color: rgba(0,229,160,0.3);
       background: rgba(0,229,160,0.02);
     }
-
     .pub-year {
       font-size: 11px;
       color: var(--accent);
@@ -548,7 +510,6 @@
       min-width: 40px;
       font-family: 'DM Mono', monospace;
     }
-
     .pub-body { flex: 1; }
     .pub-title {
       font-family: 'Cormorant Garamond', serif;
@@ -574,7 +535,6 @@
       text-transform: uppercase;
       letter-spacing: 0.1em;
     }
-
     .pub-arrow {
       color: var(--muted);
       font-size: 18px;
@@ -582,7 +542,6 @@
       transition: color 0.2s, transform 0.2s;
     }
     .pub-item:hover .pub-arrow { color: var(--accent); transform: translateX(4px); }
-
     /* ── GITHUB / CODE ── */
     #code { background: var(--surface); }
     .repos-grid {
@@ -610,7 +569,6 @@
     }
     .repo-card:hover::before { height: 100%; }
     .repo-card:hover { border-color: rgba(0,229,160,0.25); }
-
     .repo-icon { font-size: 20px; margin-bottom: 14px; }
     .repo-name {
       font-family: 'Syne', sans-serif;
@@ -637,7 +595,6 @@
       margin-right: 5px;
       color: var(--accent);
     }
-
     /* ── CONNECT ── */
     .connect-grid {
       display: grid;
@@ -666,7 +623,6 @@
       font-weight: 600;
     }
     .connect-sub { font-size: 12px; color: var(--muted); }
-
     /* ── FOOTER ── */
     footer {
       border-top: 1px solid var(--border);
@@ -680,7 +636,71 @@
     }
     footer p { font-size: 11px; color: var(--muted); }
     footer span { color: var(--accent); }
-
+    /* ── CONFERENCE PROCEEDINGS ── */
+    #proceedings { background: var(--surface); }
+    .proc-list { display: flex; flex-direction: column; gap: 2px; }
+    .proc-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 28px 32px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 24px;
+      align-items: start;
+      transition: border-color 0.25s, background 0.25s;
+      text-decoration: none;
+      color: inherit;
+    }
+    .proc-item:hover {
+      border-color: rgba(123,97,255,0.35);
+      background: rgba(123,97,255,0.03);
+    }
+    .proc-year {
+      font-size: 11px;
+      color: var(--accent2);
+      letter-spacing: 0.1em;
+      padding-top: 4px;
+      min-width: 40px;
+      font-family: 'DM Mono', monospace;
+    }
+    .proc-body { flex: 1; }
+    .proc-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 21px;
+      font-weight: 400;
+      line-height: 1.35;
+      margin-bottom: 9px;
+      color: var(--text);
+    }
+    .proc-authors {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      line-height: 1.7;
+    }
+    .proc-authors strong { color: var(--text); }
+    .proc-venue {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10.5px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .proc-arrow {
+      color: var(--muted);
+      font-size: 18px;
+      padding-top: 2px;
+      transition: color 0.2s, transform 0.2s;
+    }
+    .proc-item:hover .proc-arrow { color: var(--accent2); transform: translateX(4px); }
+    .proc-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 24px;
+      line-height: 1.8;
+    }
     /* ── ANIMATIONS ── */
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(24px); }
@@ -690,7 +710,6 @@
       from { opacity: 0; transform: translateY(-16px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-
     .reveal {
       opacity: 0;
       transform: translateY(30px);
@@ -700,7 +719,6 @@
       opacity: 1;
       transform: none;
     }
-
     /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
       nav { padding: 16px 24px; }
@@ -713,15 +731,15 @@
       .connect-grid { grid-template-columns: 1fr 1fr; }
       .pub-item { grid-template-columns: 1fr; gap: 8px; }
       .pub-arrow { display: none; }
+      .proc-item { grid-template-columns: 1fr; gap: 8px; }
+      .proc-arrow { display: none; }
       .math-glyph { display: none; }
     }
   </style>
 </head>
 <body>
-
   <div class="glow-blob blob-1"></div>
   <div class="glow-blob blob-2"></div>
-
   <!-- NAV -->
   <nav>
     <a href="#hero" class="nav-logo">CE<span>.</span></a>
@@ -729,11 +747,11 @@
       <a href="#about">About</a>
       <a href="#education">Education</a>
       <a href="#publications">Research</a>
+      <a href="#proceedings">Proceedings</a>
       <a href="#code">Code</a>
       <a href="#connect">Connect</a>
     </div>
   </nav>
-
   <!-- HERO -->
   <section id="hero">
     <div class="hero-grid">
@@ -750,7 +768,6 @@
             GPU-accelerated reservoir simulation, physics-informed neural operators, and Bayesian inverse problems.
             Building the next generation of scientific machine learning for subsurface flow and carbon capture.
           </p>
-
           <div class="hero-tags">
             <span class="tag">Physics Informed neural Operator</span>
             <span class="tag">HPC</span>
@@ -767,11 +784,10 @@
             <a href="https://github.com/clementetienam" target="_blank" class="btn btn-secondary">GitHub →</a>
           </div>
         </div>
-
         <div class="photo-card">
           <div class="photo-frame">
             <!-- Replace src with your actual photo URL -->
-          <img src="IMG_2005.JPG" alt="Clement Etienam">
+          <img src="IMG_2005.JPG" alt="Clement Etienam" onerror="this.style.display='none'">
           </div>
           <div class="photo-badge">
             <div class="badge-stat">159</div>
@@ -781,7 +797,6 @@
       </div>
     </div>
   </section>
-
   <!-- ABOUT -->
   <section id="about">
     <div class="container">
@@ -844,8 +859,8 @@
             <div class="lbl">Total citations</div>
           </div>
           <div class="stat-box">
-            <div class="num">10<span>+</span></div>
-            <div class="lbl">Publications</div>
+            <div class="num">20<span>+</span></div>
+            <div class="lbl">Papers &amp; publications</div>
           </div>
           <div class="stat-box">
             <div class="num">10<span>yr</span></div>
@@ -855,7 +870,6 @@
       </div>
     </div>
   </section>
-
   <!-- EDUCATION -->
   <section id="education">
     <div class="container">
@@ -865,7 +879,6 @@
       </div>
       <hr class="section-rule">
       <div class="edu-timeline">
-
         <div class="edu-item reveal">
           <div class="edu-marker">
             <svg viewBox="0 0 24 24" fill="none" stroke="#00e5a0" stroke-width="1.4">
@@ -881,7 +894,6 @@
             <div class="edu-eq"><span class="eq-render" data-eq="\hat{y}(x) = f_{c(x)}(x), \qquad c(x) = \arg\max_k\ P(k \mid x)"></span></div>
           </div>
         </div>
-
         <div class="edu-item reveal">
           <div class="edu-marker">
             <svg viewBox="0 0 24 24" fill="none" stroke="#00e5a0" stroke-width="1.4">
@@ -898,7 +910,6 @@
             <a href="https://research.manchester.ac.uk/files/93526730/FULL_TEXT.PDF" target="_blank" class="edu-thesis-link">Read the full thesis (PDF) →</a>
           </div>
         </div>
-
         <div class="edu-item reveal">
           <div class="edu-marker">
             <svg viewBox="0 0 24 24" fill="none" stroke="#7b61ff" stroke-width="1.4">
@@ -914,7 +925,6 @@
             <div class="edu-eq"><span class="eq-render" data-eq="M\ddot{x} + C\dot{x} + Kx = F(t)"></span></div>
           </div>
         </div>
-
         <div class="edu-item reveal">
           <div class="edu-marker">
             <svg viewBox="0 0 24 24" fill="none" stroke="#7b61ff" stroke-width="1.4">
@@ -932,11 +942,9 @@
             <div class="edu-eq"><span class="eq-render" data-eq="\dfrac{dm}{dt} = \sum \dot{m}_{in} - \sum \dot{m}_{out}"></span></div>
           </div>
         </div>
-
       </div>
     </div>
   </section>
-
   <!-- PUBLICATIONS -->
   <section id="publications">
     <div class="container">
@@ -946,7 +954,7 @@
       </div>
       <hr class="section-rule">
       <div class="pub-list">
-        
+
         <a href="https://doi.org/10.48550/arXiv.2605.28909" target="_blank" class="pub-item reveal">
           <div class="pub-year">2026</div>
           <div class="pub-body">
@@ -955,8 +963,8 @@
             <div class="pub-venue">arXiv:2605.28909</div>
           </div>
           <div class="pub-arrow">→</div>
-        </a>  
-        
+        </a>
+
         <a href="https://arxiv.org/abs/2406.00889" target="_blank" class="pub-item reveal">
           <div class="pub-year">2024</div>
           <div class="pub-body">
@@ -966,7 +974,7 @@
           </div>
           <div class="pub-arrow">→</div>
         </a>
-        
+
         <a href="https://advanced.onlinelibrary.wiley.com/doi/abs/10.1002/adts.202500747" target="_blank" class="pub-item reveal">
           <div class="pub-year">2025</div>
           <div class="pub-body">
@@ -976,7 +984,6 @@
           </div>
           <div class="pub-arrow">→</div>
         </a>
-
         <a href="https://arxiv.org/abs/2404.14447" target="_blank" class="pub-item reveal">
           <div class="pub-year">2024</div>
           <div class="pub-body">
@@ -986,8 +993,7 @@
           </div>
           <div class="pub-arrow">→</div>
         </a>
-
-        <a href="https://openreview.net/forum?id=NeurIPS2022LIPS" target="_blank" class="pub-item reveal">
+        <a href="https://proceedings.neurips.cc/paper_files/paper/2022/hash/b3ac9866f6333beaa7d38926101b7e1c-Abstract-Datasets_and_Benchmarks.html" target="_blank" class="pub-item reveal">
           <div class="pub-year">2022</div>
           <div class="pub-body">
             <div class="pub-title">LIPS — Learning Industrial Physical Simulation Benchmark Suite</div>
@@ -996,7 +1002,6 @@
           </div>
           <div class="pub-arrow">→</div>
         </a>
-
         <a href="https://arxiv.org/abs/2006.13309" target="_blank" class="pub-item reveal">
           <div class="pub-year">2020</div>
           <div class="pub-body">
@@ -1006,7 +1011,6 @@
           </div>
           <div class="pub-arrow">→</div>
         </a>
-
         <a href="https://www.aimsciences.org/article/doi/10.3934/fods.2019020" target="_blank" class="pub-item reveal">
           <div class="pub-year">2019</div>
           <div class="pub-body">
@@ -1016,7 +1020,6 @@
           </div>
           <div class="pub-arrow">→</div>
         </a>
-
         <a href="https://arxiv.org/abs/1905.07469" target="_blank" class="pub-item reveal">
           <div class="pub-year">2019</div>
           <div class="pub-body">
@@ -1026,16 +1029,153 @@
           </div>
           <div class="pub-arrow">→</div>
         </a>
-
       </div>
     </div>
   </section>
-
+  <!-- CONFERENCE PROCEEDINGS -->
+  <section id="proceedings">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-num">04 —</span>
+        <h2>Papers &amp; Presentations</h2>
+      </div>
+      <hr class="section-rule">
+      <div class="proc-list">
+        <a href="https://doi.org/10.3997/2214-4609.202637012" target="_blank" class="proc-item reveal">
+          <div class="proc-year">2026</div>
+          <div class="proc-body">
+            <div class="proc-title">An Accelerated CO₂-Brine Physics-Constrained Neural Operator Forward Model</div>
+            <div class="proc-authors"><strong>C. Etienam</strong>, O. Ovcharenko, J. Yang, N. Luiken, T. Onishi, N. Moridis, I. Said</div>
+            <div class="proc-venue">ECMOR 2026 — European Conference on the Mathematics of Geological Reservoirs (EAGE)</div>
+          </div>
+          <div class="proc-arrow">→</div>
+        </a>
+        <a href="https://doi.org/10.3997/2214-4609.202637013" target="_blank" class="proc-item reveal">
+          <div class="proc-year">2026</div>
+          <div class="proc-body">
+            <div class="proc-title">Sequential Physics-Constrained Neural Operator Forward Modelling for the Norne Reservoir System</div>
+            <div class="proc-authors"><strong>C. Etienam</strong>, O. Ovcharenko, J. Yang, T. Onishi, N. Luiken, N. Moridis, I. Said</div>
+            <div class="proc-venue">ECMOR 2026 — European Conference on the Mathematics of Geological Reservoirs (EAGE)</div>
+          </div>
+          <div class="proc-arrow">→</div>
+        </a>
+        <a href="https://doi.org/10.3997/2214-4609.202637077" target="_blank" class="proc-item reveal">
+          <div class="proc-year">2026</div>
+          <div class="proc-body">
+            <div class="proc-title">Operator-Learning Powered Advanced Reservoir Simulation Surrogates</div>
+            <div class="proc-authors">K. R. Kumar, D. Stephen Blom, L. Vincent, H. Pattathil, <strong>C. Etienam</strong>, T. Onishi, H. Sethi, S. Pawar, P. Devarakota, F. Alpak, A. Belien</div>
+            <div class="proc-venue">ECMOR 2026 — European Conference on the Mathematics of Geological Reservoirs (EAGE)</div>
+          </div>
+          <div class="proc-arrow">→</div>
+        </a>
+        <a href="https://doi.org/10.2523/IPTC-25130-MS" target="_blank" class="proc-item reveal">
+          <div class="proc-year">2026</div>
+          <div class="proc-body">
+            <div class="proc-title">AI Accelerated Forward Modeling Using Physics Informed Neural Operators for Real-Time Reservoir Management</div>
+            <div class="proc-authors">A. I. Alrassan, A. A. Alturki, <strong>C. Etienam</strong>, T. Onishi, H. A. Ashish</div>
+            <div class="proc-venue">IPTC Summit on AI for the Energy Industry, Dubai, UAE · 13 Jan 2026 (IPTC-25130-MS)</div>
+          </div>
+          <div class="proc-arrow">→</div>
+        </a>
+        <a href="https://doi.org/10.3997/2214-4609.202437067" target="_blank" class="proc-item reveal">
+          <div class="proc-year">2024</div>
+          <div class="proc-body">
+            <div class="proc-title">A Reservoir History Matching Approach Using a Coupled Mixture of Experts–Physics Informed Neural Operator Forward Model</div>
+            <div class="proc-authors"><strong>C. Etienam</strong>, Y. Juntao, I. Said, O. Ovcharenko</div>
+            <div class="proc-venue">ECMOR 2024 — European Conference on the Mathematics of Geological Reservoirs (EAGE), Oslo</div>
+          </div>
+          <div class="proc-arrow">→</div>
+        </a>
+        <a href="https://doi.org/10.2118/222576-MS" target="_blank" class="proc-item reveal">
+          <div class="proc-year">2024</div>
+          <div class="proc-body">
+            <div class="proc-title">Accelerating Reservoir Modeling Workflows With Neural Operators and GPU-Based Full-Physics Simulations on the Cloud</div>
+            <div class="proc-authors">K. Mukundakrishnan, K. Wiegand, V. Natoli, <strong>C. Etienam</strong>, H. Sethi, D. Tishechkin, D. Kahn, V. Ananthan</div>
+            <div class="proc-venue">ADIPEC 2024 — Abu Dhabi International Petroleum Exhibition &amp; Conference (SPE-222576-MS)</div>
+          </div>
+          <div class="proc-arrow">→</div>
+        </a>
+        <a href="https://doi.org/10.1190/image2024-4100677.1" target="_blank" class="proc-item reveal">
+          <div class="proc-year">2024</div>
+          <div class="proc-body">
+            <div class="proc-title">Enhancing Reservoir Simulation Workflows by Coupling a GPU-Accelerated Full-Physics Simulator With a Fourier Neural Operator-Based Surrogate Model</div>
+            <div class="proc-authors">K. Mukundakrishnan, K. Wiegand, V. Ananthan, D. Kahn, D. Tishechkin, M. Kajita, <strong>C. Etienam</strong></div>
+            <div class="proc-venue">IMAGE 2024 — Fourth International Meeting for Applied Geoscience &amp; Energy (SEG / AAPG), Houston</div>
+          </div>
+          <div class="proc-arrow">→</div>
+        </a>
+        <a href="https://doi.org/10.3997/2214-4609.2023630004" target="_blank" class="proc-item reveal">
+          <div class="proc-year">2023</div>
+          <div class="proc-body">
+            <div class="proc-title">A Reservoir Model Characterization with a Bayesian Framework and a Modulus-Based Physics-Constrained Neural Operator</div>
+            <div class="proc-authors"><strong>C. Etienam</strong>, I. Said, O. Ovcharenko, K. Hester</div>
+            <div class="proc-venue">EAGE Seventh High Performance Computing Workshop, Lugano · 25–27 Sep 2023</div>
+          </div>
+          <div class="proc-arrow">→</div>
+        </a>
+        <a href="https://doi.org/10.2118/195500-MS" target="_blank" class="proc-item reveal">
+          <div class="proc-year">2019</div>
+          <div class="proc-body">
+            <div class="proc-title">4D Seismic History Matching Incorporating Unsupervised Learning</div>
+            <div class="proc-authors"><strong>C. Etienam</strong></div>
+            <div class="proc-venue">SPE Europec featured at 81st EAGE Conference &amp; Exhibition, London (SPE-195500-MS)</div>
+          </div>
+          <div class="proc-arrow">→</div>
+        </a>
+        <a href="https://doi.org/10.2118/194751-MS" target="_blank" class="proc-item reveal">
+          <div class="proc-year">2019</div>
+          <div class="proc-body">
+            <div class="proc-title">A Coupled Viscosity Estimation and Reservoir Simulation for Ensemble-Based Production Optimisation</div>
+            <div class="proc-authors">B. Almaraghi, <strong>C. Etienam</strong>, R. Villegas</div>
+            <div class="proc-venue">SPE Middle East Oil &amp; Gas Show and Conference, Manama, Bahrain (SPE-194751-MS)</div>
+          </div>
+          <div class="proc-arrow">→</div>
+        </a>
+        <a href="https://doi.org/10.1007/978-3-030-27550-1_72" target="_blank" class="proc-item reveal">
+          <div class="proc-year">2019</div>
+          <div class="proc-body">
+            <div class="proc-title">Sparse Multiple Data Assimilation with K-SVD for the History Matching of Reservoirs</div>
+            <div class="proc-authors"><strong>C. Etienam</strong>, R. Villegas Velasquez, O. Dorn</div>
+            <div class="proc-venue">Progress in Industrial Mathematics at ECMI 2018 — Mathematics in Industry, Springer</div>
+          </div>
+          <div class="proc-arrow">→</div>
+        </a>
+        <a href="https://doi.org/10.2118/190803-MS" target="_blank" class="proc-item reveal">
+          <div class="proc-year">2018</div>
+          <div class="proc-body">
+            <div class="proc-title">CO₂ Sequestration Using Ensemble Kalman Filter and Considering a Sustainability Approach</div>
+            <div class="proc-authors">R. Villegas, <strong>C. Etienam</strong>, F. Rahma</div>
+            <div class="proc-venue">SPE Europec featured at 80th EAGE Conference &amp; Exhibition, Copenhagen (SPE-190803-MS)</div>
+          </div>
+          <div class="proc-arrow">→</div>
+        </a>
+        <a href="https://doi.org/10.3997/2214-4609.201701639" target="_blank" class="proc-item reveal">
+          <div class="proc-year">2017</div>
+          <div class="proc-body">
+            <div class="proc-title">History Matching of Reservoirs by Updating Fault Properties Using 4D Seismic Results and Ensemble Kalman Filter</div>
+            <div class="proc-authors"><strong>C. Etienam</strong>, I. Mahmood, R. Villegas</div>
+            <div class="proc-venue">79th EAGE Conference &amp; Exhibition — SPE Europec, Paris (also SPE-185780-MS)</div>
+          </div>
+          <div class="proc-arrow">→</div>
+        </a>
+        <a href="https://doi.org/10.3997/2214-4609.201600605" target="_blank" class="proc-item reveal">
+          <div class="proc-year">2016</div>
+          <div class="proc-body">
+            <div class="proc-title">Integrated Structural Reconstruction and History Matching Using Ensemble Filter and Low-Frequency Electromagnetic Data</div>
+            <div class="proc-authors"><strong>C. Etienam</strong>, R. Villegas, M. Babaei</div>
+            <div class="proc-venue">78th EAGE Conference &amp; Exhibition, Vienna</div>
+          </div>
+          <div class="proc-arrow">→</div>
+        </a>
+      </div>
+      <p class="proc-note">Fourteen peer-reviewed conference papers, 2016 — 2026, across EAGE (Annual Conference, ECMOR, HPC Workshop), SPE (Europec, MEOS, ADIPEC), IPTC, SEG/AAPG IMAGE, and ECMI — as lead author and co-author. Every entry links to its DOI of record.</p>
+    </div>
+  </section>
 <!-- CODE -->
   <section id="code">
     <div class="container">
       <div class="section-header reveal">
-        <span class="section-num">04 —</span>
+        <span class="section-num">05 —</span>
         <h2>Code</h2>
       </div>
       <hr class="section-rule">
@@ -1084,12 +1224,11 @@
       </div>
     </div>
   </section>
-
   <!-- CONNECT -->
   <section id="connect">
     <div class="container">
       <div class="section-header reveal">
-        <span class="section-num">05 —</span>
+        <span class="section-num">06 —</span>
         <h2>Connect</h2>
       </div>
       <hr class="section-rule">
@@ -1117,7 +1256,6 @@
       </div>
     </div>
   </section>
-
   <!-- FOOTER -->
   <footer>
     <div class="container">
@@ -1125,7 +1263,6 @@
       <p>United Kingdom · <span>Psalm 50:15</span></p>
     </div>
   </footer>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
   <script>
     // Render all KaTeX equations
@@ -1134,7 +1271,6 @@
         katex.render(el.getAttribute('data-eq'), el, { throwOnError: false, displayMode: false });
       } catch (e) { console.warn('KaTeX render failed', e); }
     });
-
     // Scroll reveal
     const reveals = document.querySelectorAll('.reveal');
     const observer = new IntersectionObserver((entries) => {
@@ -1146,9 +1282,8 @@
       });
     }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
     reveals.forEach(el => observer.observe(el));
-
     // Stagger siblings
-    document.querySelectorAll('.pub-list, .repos-grid, .connect-grid, .edu-timeline').forEach(container => {
+    document.querySelectorAll('.pub-list, .repos-grid, .connect-grid, .edu-timeline, .proc-list').forEach(container => {
       const children = container.querySelectorAll('.reveal');
       children.forEach((child, i) => {
         child.style.transitionDelay = `${i * 60}ms`;
