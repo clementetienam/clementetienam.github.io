@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Clement Etienam</title>
+  <meta name="description" content="Clement Etienam, Ph.D.: GPU-accelerated reservoir simulation, physics-informed neural operators and Bayesian inverse problems.">
+  <meta property="og:title" content="Clement Etienam, Ph.D.">
+  <meta property="og:description" content="GPU-accelerated reservoir simulation, physics-informed neural operators and Bayesian inverse problems.">
+  <meta property="og:image" content="https://clementetienam.com/assets/img/clement-etienam.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
@@ -701,6 +705,30 @@
       margin-top: 24px;
       line-height: 1.8;
     }
+
+    /* ── FEATURED WORK ── */
+    .work-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .work-card {
+      display: flex; flex-direction: column;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+      overflow: hidden; text-decoration: none; color: inherit;
+      transition: border-color .3s, transform .3s, box-shadow .3s;
+    }
+    .work-card:hover { border-color: rgba(0,229,160,.45); transform: translateY(-4px); box-shadow: 0 18px 40px rgba(0,0,0,.45); }
+    .work-media { position: relative; aspect-ratio: 16/11; background: #fff; overflow: hidden; }
+    .work-media img { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; transition: transform .6s; }
+    .work-card:hover .work-media img { transform: scale(1.04); }
+    .work-media .work-live { position: absolute; top: 12px; left: 12px; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; background: var(--accent); color: #04140e; padding: 3px 9px; border-radius: 3px; }
+    .work-body { padding: 22px 22px 24px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+    .work-kicker { font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+    .work-title { font-family: 'Cormorant Garamond', serif; font-size: 26px; line-height: 1.15; font-weight: 400; }
+    .work-desc { font-size: 13px; color: var(--muted); line-height: 1.65; flex: 1; }
+    .work-more { font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent2); }
+    .work-card:hover .work-more { color: var(--accent); }
+    /* ── MENU BUTTON (small screens) ── */
+    .nav-toggle { display: none; background: none; border: 1px solid var(--border); color: var(--text); border-radius: 4px; width: 40px; height: 36px; font-size: 18px; cursor: pointer; }
+    @media (max-width: 1100px) { .work-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 700px) { .work-grid { grid-template-columns: 1fr; } }
     /* ── ANIMATIONS ── */
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(24px); }
@@ -722,10 +750,14 @@
     /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
       nav { padding: 16px 24px; }
-      .nav-links { display: none; }
+      .nav-toggle { display: inline-flex; align-items: center; justify-content: center; }
+      .nav-links { display: none; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; gap: 0;
+                   background: rgba(10,10,11,.97); border-bottom: 1px solid var(--border); padding: 8px 24px 16px; }
+      nav.open .nav-links { display: flex; }
+      .nav-links a { padding: 12px 0; border-bottom: 1px solid var(--border); }
       .container { padding: 0 24px; }
       .hero-inner { grid-template-columns: 1fr; }
-      .photo-card { display: none; }
+      .photo-card { display: block; width: min(320px, 78vw); margin: 40px auto 30px; }
       .about-grid { grid-template-columns: 1fr; gap: 40px; }
       .repos-grid { grid-template-columns: 1fr; }
       .connect-grid { grid-template-columns: 1fr 1fr; }
@@ -743,8 +775,10 @@
   <!-- NAV -->
   <nav>
     <a href="#hero" class="nav-logo">CE<span>.</span></a>
+    <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false">&#9776;</button>
     <div class="nav-links">
       <a href="#about">About</a>
+      <a href="#work">Work</a>
       <a href="#education">Education</a>
       <a href="#publications">Research</a>
       <a href="#proceedings">Proceedings</a>
@@ -786,8 +820,7 @@
         </div>
         <div class="photo-card">
           <div class="photo-frame">
-            <!-- Replace src with your actual photo URL -->
-          <img src="IMG_2005.JPG" alt="Clement Etienam" onerror="this.style.display='none'">
+          <img src="assets/img/clement-etienam.jpg" alt="Clement Etienam" width="900" height="1200" fetchpriority="high">
           </div>
           <div class="photo-badge">
             <div class="badge-stat">166</div>
@@ -870,11 +903,50 @@
       </div>
     </div>
   </section>
+  <!-- FEATURED WORK -->
+  <section id="work">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-num">02 —</span>
+        <h2>Featured Work</h2>
+      </div>
+      <hr class="section-rule">
+      <div class="work-grid">
+        <a href="work/pino-norne.html" class="work-card reveal">
+          <div class="work-media"><img src="assets/media/pino/forward_rollout_poster.jpg" data-hover="assets/media/pino/forward_rollout.gif" alt="PINO forward rollout on the Norne field" loading="lazy"><span class="work-live">live demo</span></div>
+          <div class="work-body">
+            <span class="work-kicker">PhysicsNeMo · arXiv 2026</span>
+            <span class="work-title">Physics-informed neural operators for the Norne field</span>
+            <span class="work-desc">Neural-operator forward modelling, a mixture-of-experts well model and ensemble Kalman history matching on a real field, with movies, results and an in-browser waterflood simulator.</span>
+            <span class="work-more">Explore the work →</span>
+          </div>
+        </a>
+        <a href="work/mixed-precision.html" class="work-card reveal">
+          <div class="work-media"><img src="assets/media/nvrs/norne_fields_poster.jpg" data-hover="assets/media/nvrs/norne_fields.gif" alt="NVRS-CUDA against OPM Flow on Norne" loading="lazy"><span class="work-live">live demo</span></div>
+          <div class="work-body">
+            <span class="work-kicker">GPU computing · mixed precision</span>
+            <span class="work-title">A mixed-precision, GPU-native CPR reservoir simulator</span>
+            <span class="work-desc">A fully implicit black-oil simulator on the GPU with FP64 FGMRES and a reduced-precision CPR preconditioner, validated against OPM Flow on Norne and SPE10, with a live precision lab.</span>
+            <span class="work-more">Explore the work →</span>
+          </div>
+        </a>
+        <a href="work/physicsnemo-sym.html" class="work-card reveal">
+          <div class="work-media"><img src="assets/media/sym/pino_2d_poster.jpg" data-hover="assets/media/sym/pino_2d.gif" alt="PINO in PhysicsNeMo-Sym" loading="lazy"><span class="work-live">live demo</span></div>
+          <div class="work-body">
+            <span class="work-kicker">NVIDIA PhysicsNeMo-Sym · open source</span>
+            <span class="work-title">Reservoir simulation with neural operators in PhysicsNeMo-Sym</span>
+            <span class="work-desc">2D and 3D black-oil, CO2 storage and generative history-matching examples, with movies and an interactive ensemble-smoother demo.</span>
+            <span class="work-more">Explore the work →</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
   <!-- EDUCATION -->
   <section id="education">
     <div class="container">
       <div class="section-header reveal">
-        <span class="section-num">02 —</span>
+        <span class="section-num">03 —</span>
         <h2>Education</h2>
       </div>
       <hr class="section-rule">
@@ -949,7 +1021,7 @@
   <section id="publications">
     <div class="container">
       <div class="section-header reveal">
-        <span class="section-num">03 —</span>
+        <span class="section-num">04 —</span>
         <h2>Research</h2>
       </div>
       <hr class="section-rule">
@@ -1045,7 +1117,7 @@
   <section id="proceedings">
     <div class="container">
       <div class="section-header reveal">
-        <span class="section-num">04 —</span>
+        <span class="section-num">05 —</span>
         <h2>Papers &amp; Presentations</h2>
       </div>
       <hr class="section-rule">
@@ -1202,7 +1274,7 @@
   <section id="code">
     <div class="container">
       <div class="section-header reveal">
-        <span class="section-num">05 —</span>
+        <span class="section-num">06 —</span>
         <h2>Code</h2>
       </div>
       <hr class="section-rule">
@@ -1255,7 +1327,7 @@
   <section id="connect">
     <div class="container">
       <div class="section-header reveal">
-        <span class="section-num">06 —</span>
+        <span class="section-num">07 —</span>
         <h2>Connect</h2>
       </div>
       <hr class="section-rule">
@@ -1309,8 +1381,25 @@
       });
     }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
     reveals.forEach(el => observer.observe(el));
+
+    // Menu button on small screens
+    const navEl = document.querySelector('nav'), tog = document.querySelector('.nav-toggle');
+    if (tog) {
+      tog.addEventListener('click', () => {
+        const o = navEl.classList.toggle('open');
+        tog.setAttribute('aria-expanded', o ? 'true' : 'false');
+      });
+      document.querySelectorAll('.nav-links a').forEach(a => a.addEventListener('click', () => navEl.classList.remove('open')));
+    }
+    // Featured work: play the movie on hover
+    document.querySelectorAll('.work-media img[data-hover]').forEach(img => {
+      const still = img.getAttribute('src'), anim = img.getAttribute('data-hover');
+      const card = img.closest('.work-card');
+      card.addEventListener('mouseenter', () => { img.src = anim; });
+      card.addEventListener('mouseleave', () => { img.src = still; });
+    });
     // Stagger siblings
-    document.querySelectorAll('.pub-list, .repos-grid, .connect-grid, .edu-timeline, .proc-list').forEach(container => {
+    document.querySelectorAll('.pub-list, .repos-grid, .connect-grid, .edu-timeline, .proc-list, .work-grid').forEach(container => {
       const children = container.querySelectorAll('.reveal');
       children.forEach((child, i) => {
         child.style.transitionDelay = `${i * 60}ms`;

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mixed-precision GPU-native reservoir simulation | Clement Etienam</title>
+<meta name="description" content="A GPU-resident, fully implicit three-phase black-oil simulator whose linear solver combines FP64 flexible GMRES with a reduced-precision constrained-pressure-residual preconditioner, benchmarked against OPM Flow on the Norne field, SPE10 model 2 and models of up to five million cells.">
+<meta property="og:title" content="Mixed-precision GPU-native reservoir simulation">
+<meta property="og:description" content="A GPU-resident, fully implicit three-phase black-oil simulator whose linear solver combines FP64 flexible GMRES with a reduced-precision constrained-pressure-residual preconditioner, benchmarked against OPM Flow on the Norne field, SPE10 model 2 and models of up to five million cells.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="../assets/css/work.css?v=20261004191428">
+</head>
+<body>
+<nav class="wnav">
+  <a class="logo" href="../index.html">CE<span>.</span></a>
+  <div class="links"><a class="hide-sm" href="../index.html#work">All work</a><a href="pino-norne.html">PINO · Norne</a><a href="mixed-precision.html" style="color:var(--accent)">Mixed precision</a><a href="physicsnemo-sym.html">PhysicsNeMo-Sym</a></div>
+</nav>
+<header class="whero"><div class="wrap">
+  <span class="kicker">NVRS-CUDA · mixed-precision CPR</span>
+  <h1>A mixed-precision, <em>GPU-native</em> CPR solver for fully implicit reservoir simulation</h1>
+  <p class="lede">A GPU-resident, fully implicit three-phase black-oil simulator whose linear solver combines FP64 flexible GMRES with a reduced-precision constrained-pressure-residual preconditioner, benchmarked against OPM Flow on the Norne field, SPE10 model 2 and models of up to five million cells.</p>
+  <div class="tags"><span class="tag">GPU computing</span><span class="tag">Mixed precision</span><span class="tag">CPR</span><span class="tag">FGMRES</span><span class="tag">Algebraic multigrid</span><span class="tag">Black-oil</span><span class="tag">OPM Flow</span></div>
+  <div class="btns"><a class="btn primary" href="#app">Run the simulator</a><a class="btn" href="#results">Results</a><a class="btn" href="#movies">Movies</a><a class="btn" href="#demo">Precision lab</a></div>
+  <div class="stats"><div class="stat"><b>3.5x</b><span>faster than OPM Flow&#x27;s fastest configuration, Norne, one GB200</span></div><div class="stat"><b>18.6x</b><span>against OPM Flow&#x27;s CPU solver on SPE10, VR72</span></div><div class="stat"><b>1.12 M</b><span>cells in SPE10 model 2, on one GPU</span></div><div class="stat"><b>FP64</b><span>accuracy with an FP32 preconditioner</span></div></div>
+</div></header>
+<section class="wsec" id="overview"><div class="wrap"><span class="num">01 · Overview</span><h2>A fully implicit simulator that lives on the GPU</h2><hr class="rule">
+<p>NVRS-CUDA is a three-phase black-oil simulator with dissolved gas and vaporised oil in which property
+evaluation, analytic Jacobian assembly, algebraic multigrid and the well equations all run on the device. Each
+Newton step is solved with flexible GMRES and a two-stage constrained-pressure-residual (CPR) preconditioner:
+stage 1 is one AmgX algebraic-multigrid V-cycle on the pressure block, stage 2 is 2 x 2 block Jacobi. The
+state, residuals and Krylov recurrences stay in double precision; the preconditioner runs in lower precision.
+BoomerAMG from HYPRE and Ginkgo can replace AmgX in stage 1.</p><div class="cols"><div class="card"><h3>GPU-resident Newton loop</h3><p>The host reads the deck and writes results; inside a Newton iteration nothing returns to the host.</p></div><div class="card"><h3>Mixed-precision CPR</h3><p>Stage 1: one AmgX V-cycle on the pressure block in FP32. Stage 2: 2 x 2 block Jacobi. Outer FGMRES in FP64 keeps the answer exact.</p></div><div class="card"><h3>Block-sparse operator, CUDA graphs</h3><p>A block-sparse operator cuts the cost per Krylov iteration; graph replay is used only where it pays for itself.</p></div><div class="card"><h3>Validated against OPM Flow</h3><p>Norne, SPE10 model 2 and synthetic models of up to five million cells, well by well and field by field.</p></div></div></div></section><section class="wsec" id="maths"><div class="wrap"><span class="num">02 · Mathematics</span><h2>Why reduced precision is safe here</h2><hr class="rule"><div class="eq"><div class="eq-render" data-eq="J\,\delta u=-R,\qquad M_{\rm cpr}^{-1}=M_2^{-1}\big[I-J\,P\,A_p^{-1}P^{\top}W\big]+P\,A_p^{-1}P^{\top}W"></div><p class="dnote" style="margin-top:8px">Two-stage CPR: one AmgX V-cycle approximates the inverse of the pressure block A_p, then 2 x 2 block Jacobi (M_2) acts on the full system.</p></div><div class="eq"><div class="eq-render" data-eq="J Z_m = V_{m+1}\bar H_m,\qquad \min_{y}\ \big\|\beta e_1-\bar H_m y\big\|=\big\|b-J(x_0+Z_m y)\big\|"></div><p class="dnote" style="margin-top:8px">Flexible GMRES minimises the true residual over whatever directions the preconditioner produced, so rounding inside the preconditioner changes the iteration count, not the solution.</p></div><div class="eq"><div class="eq-render" data-eq="u_{\rm FP32}\;\kappa\big(M^{-1}A\big)\ll 1"></div><p class="dnote" style="margin-top:8px">The condition that licenses an FP32 preconditioner: FP32 unit roundoff times the conditioning of the preconditioned operator.</p></div></div></section><section class="wsec" id="app"><div class="wrap"><span class="num">03 · The simulator, live</span><h2>Inside one Newton step: FGMRES with two-stage CPR</h2><hr class="rule">
+<p>This is the simulator in miniature, running in your browser. A fully implicit two-phase model has pressure and
+water saturation in every cell, so the Jacobian has 2 x 2 blocks. Every time step is a Newton loop, and every
+Newton step solves <b>J &delta;u = &minus;R</b> with <b>FGMRES in FP64</b>, preconditioned by <b>two-stage CPR</b>.
+Stage 1 applies quasi-IMPES weights to form the pressure matrix and one aggregation-multigrid V-cycle (the role
+AmgX plays). Stage 2 is <b>2 x 2 block Jacobi</b>. Choose the precision of the preconditioner and watch the
+iteration counts, the time per stage and the solution.</p>
+<div class="demo" id="demo-nvrs">
+  <div class="pipeline">
+    <div class="stage" data-stage="fp64"><small>1</small><b>Assemble R, J</b><span>analytic Jacobian, 2 x 2 blocks</span><em>FP64</em></div>
+    <div class="stage" data-stage="fp64"><small>2</small><b>FGMRES</b><span>outer Krylov on the full system</span><em>FP64</em></div>
+    <div class="stage pre" data-stage="pre"><small>3</small><b>CPR stage 1</b><span>quasi-IMPES pressure matrix, one multigrid V-cycle</span><em>FP32</em></div>
+    <div class="stage pre" data-stage="pre"><small>4</small><b>CPR stage 2</b><span>2 x 2 block Jacobi on the full system</span><em>FP32</em></div>
+    <div class="stage" data-stage="fp64"><small>5</small><b>Newton update</b><span>chop, converge, grow or cut the step</span><em>FP64</em></div>
+  </div>
+  <div class="demo-grid" style="margin-top:16px">
+    <div><canvas class="field" width="560" height="560" aria-label="Reservoir state"></canvas></div>
+    <div>
+      <div class="sim-stats"></div>
+      <div class="split"></div>
+      <canvas class="conv" width="560" height="250" aria-label="Newton and FGMRES convergence"></canvas>
+    </div>
+  </div>
+  <div class="controls">
+    <label>Preconditioner precision <select name="prec"><option value="fp64">FP64</option><option value="fp32" selected>FP32 (the paper)</option><option value="fp16">FP16</option></select></label>
+    <label>Grid <select name="n"><option value="16" selected>16 x 16</option><option value="32">32 x 32</option><option value="64">64 x 64</option></select></label>
+    <label>Heterogeneity (std of ln K) <span class="v" data-for="sigma"></span><input type="range" name="sigma" min="0.2" max="3" step="0.1" value="1.5"></label>
+    <label>Oil/water viscosity ratio <span class="v" data-for="visc"></span><input type="range" name="visc" min="1" max="20" step="1" value="5"></label>
+    <label>Geology seed <span class="v" data-for="seed"></span><input type="range" name="seed" min="1" max="30" step="1" value="3"></label>
+    <label>FGMRES restart <span class="v" data-for="restart"></span><input type="range" name="restart" min="10" max="60" step="5" value="30"></label>
+    <label>Report step <span class="v" data-for="dtmax"></span><input type="range" name="dtmax" min="1" max="40" step="1" value="12"></label>
+    <label>End time <span class="v" data-for="tend"></span><input type="range" name="tend" min="50" max="1000" step="50" value="400"></label>
+    <label>Show <select name="view"><option value="S">water saturation</option><option value="p">pressure</option><option value="K">log permeability</option></select></label>
+  </div>
+  <div class="dbtns"><button class="run">Run</button><button class="step ghost">One time step</button><button class="compare ghost">Compare FP64 / FP32 / FP16 on the next step</button><button class="reset ghost">Reset</button></div>
+  <div class="cmp"></div>
+  <p class="dnote">Corey relative permeability, slightly compressible rock, water injected at a fixed rate in one corner and
+  a producer at fixed bottom-hole pressure in the other. Newton, the update limits and the time-step control use the
+  same settings as the simulator in the paper: OPM Flow's convergence test (CNV below 1e-2 and material balance below
+  1e-6 in every phase), at most 20 Newton iterations, saturation changes limited to 0.2 per iteration, FGMRES(30) to a
+  relative 1e-6, and dyadic chopping of each report step (up to six halvings, one released after two clean report
+  steps). FP16 is emulated by rounding every operation of the preconditioner, applied to the row-scaled
+  pressure matrix. This app runs in your browser, in JavaScript on the CPU, with no GPU and no server: a two-phase model
+  far smaller than the three-phase GPU simulator, but with the same stages in its nonlinear and linear solvers.
+  Larger grids take a few seconds per report step.</p>
+</div></div></section><section class="wsec" id="movies"><div class="wrap"><span class="num">04 · Movies</span><h2>Fields against OPM Flow</h2><hr class="rule"><div class="gallery wide"><figure class="fig movie" tabindex="0" data-zoom="../assets/media/nvrs/norne_fields.gif" data-group="nvrs-mov" data-caption="Norne: NVRS-CUDA against OPM Flow. Pressure, water, oil and gas saturation over the field history: OPM Flow, NVRS-CUDA and their difference."><div class="ph"><img src="../assets/media/nvrs/norne_fields_poster.jpg" data-anim="../assets/media/nvrs/norne_fields.gif" alt="Norne: NVRS-CUDA against OPM Flow" loading="lazy"><span class="play">movie</span><span class="zoomhint">click to enlarge</span></div><figcaption><b>Norne: NVRS-CUDA against OPM Flow</b>Pressure, water, oil and gas saturation over the field history: OPM Flow, NVRS-CUDA and their difference.</figcaption></figure><figure class="fig movie" tabindex="0" data-zoom="../assets/media/nvrs/spe10_fields.gif" data-group="nvrs-mov" data-caption="SPE10 model 2: the flood. 1.12 million cells over 1,000 days: pressure and saturations from OPM Flow and NVRS-CUDA, and their difference."><div class="ph"><img src="../assets/media/nvrs/spe10_fields_poster.jpg" data-anim="../assets/media/nvrs/spe10_fields.gif" alt="SPE10 model 2: the flood" loading="lazy"><span class="play">movie</span><span class="zoomhint">click to enlarge</span></div><figcaption><b>SPE10 model 2: the flood</b>1.12 million cells over 1,000 days: pressure and saturations from OPM Flow and NVRS-CUDA, and their difference.</figcaption></figure><figure class="fig movie" tabindex="0" data-zoom="../assets/media/nvrs/bench3p_fields.gif" data-group="nvrs-mov" data-caption="Three-phase benchmark. A three-phase waterflood with free gas: OPM Flow, NVRS-CUDA and the difference at every report step."><div class="ph"><img src="../assets/media/nvrs/bench3p_fields_poster.jpg" data-anim="../assets/media/nvrs/bench3p_fields.gif" alt="Three-phase benchmark" loading="lazy"><span class="play">movie</span><span class="zoomhint">click to enlarge</span></div><figcaption><b>Three-phase benchmark</b>A three-phase waterflood with free gas: OPM Flow, NVRS-CUDA and the difference at every report step.</figcaption></figure></div></div></section><section class="wsec" id="results"><div class="wrap"><span class="num">05 · Results</span><h2>Norne, SPE10 and the Million family</h2><hr class="rule">
+<p>Wall clock in seconds on one GPU, from the paper. Flow is OPM Flow 2024.10 (its GPU linear solver on one rank for
+Norne and Bench3P, its CPU solver with two threads for SPE10 on the VR72 host). NVRS-CUDA runs every model on one
+GPU with BoomerAMG or AmgX in CPR stage 1.</p>
+<div class="tablewrap"><table class="rtable">
+<tr><th rowspan="2">Model</th><th rowspan="2">Cells</th><th colspan="3">GB200</th><th colspan="3">VR72</th></tr>
+<tr><th>OPM Flow</th><th>BoomerAMG</th><th>AmgX</th><th>OPM Flow</th><th>BoomerAMG</th><th>AmgX</th></tr>
+<tr><td>Norne field</td><td>44,431</td><td>488.51</td><td>71.51</td><td><b>44.95</b></td><td>243.88</td><td>73.54</td><td><b>35.73</b></td></tr>
+<tr><td>Bench3P</td><td>4,800</td><td>9.25</td><td>3.00</td><td><b>0.89</b></td><td>5.32</td><td>3.44</td><td><b>0.95</b></td></tr>
+<tr><td>SPE10 model 2</td><td>1,122,000</td><td>n/r</td><td>99.22</td><td><b>53.06</b></td><td>766.16</td><td>91.74</td><td><b>41.21</b></td></tr>
+<tr><td>Million 1M</td><td>1,000,000</td><td>n/r</td><td>26.23</td><td><b>21.17</b></td><td>n/r</td><td>19.94</td><td><b>14.87</b></td></tr>
+<tr><td>Million 2M</td><td>2,000,000</td><td>n/r</td><td>49.94</td><td><b>39.38</b></td><td>n/r</td><td>38.23</td><td><b>27.17</b></td></tr>
+<tr><td>Million 4M</td><td>4,000,000</td><td>n/r</td><td>81.87</td><td><b>77.67</b></td><td>n/r</td><td>60.97</td><td><b>52.33</b></td></tr>
+<tr><td>Million 5M</td><td>5,000,000</td><td>n/r</td><td>102.32</td><td><b>95.61</b></td><td>n/r</td><td>76.65</td><td><b>63.77</b></td></tr>
+</table></div>
+<p class="dnote">n/r: not run. On Norne the fastest OPM Flow configuration on the GB200 node, its CPU CPR solver on 16 ranks,
+takes 165.62 s against 46.75 s for NVRS-CUDA (median of three), a factor of 3.5. On SPE10, NVRS-CUDA on one VR72 GPU is
+18.6 times faster than OPM Flow's CPU solver on two threads.</p>
+<h3 style="font-family:Syne,sans-serif;font-size:15px;margin:30px 0 4px">The Million family on one, two and four GPUs</h3>
+<p>Strong scaling of synthetic three-phase models from one to five million cells. Switch machines, or show the
+speed-up of each back end against its own one-GPU time; hover a bar for its value.</p>
+<div class="demo" id="demo-scaling">
+  <div class="dbtns" style="margin:0 0 12px">
+    <button data-m="GB200">GB200</button><button data-m="VR72" class="ghost">VR72</button>
+    <span style="width:18px"></span>
+    <button data-v="wall">Wall clock</button><button data-v="speedup" class="ghost">Speed-up</button>
+  </div>
+  <canvas width="1100" height="420" aria-label="Million family scaling"></canvas>
+  <div class="legend"><span><i style="background:#00e5a0"></i>AmgX, 1 / 2 / 4 GPUs (light to dark)</span><span><i style="background:#7b61ff"></i>BoomerAMG, 1 / 2 / 4 GPUs</span></div>
+  <div class="readout">Hover a bar for its value.</div>
+</div>
+<div class="tablewrap"><table class="rtable">
+<tr><th rowspan="2">Cells</th><th rowspan="2">Stage 1</th><th colspan="4">GB200</th><th colspan="4">VR72</th></tr>
+<tr><th>1 GPU</th><th>2 GPUs</th><th>4 GPUs</th><th>1 to 4</th><th>1 GPU</th><th>2 GPUs</th><th>4 GPUs</th><th>1 to 4</th></tr>
+<tr><td>1 M</td><td>BoomerAMG</td><td>26.23</td><td>33.85</td><td>43.27</td><td>0.61x</td><td>19.94</td><td>28.88</td><td>49.61</td><td>0.40x</td></tr>
+<tr><td></td><td>AmgX</td><td>21.17</td><td>18.96</td><td>18.26</td><td><b>1.16x</b></td><td>14.87</td><td>14.02</td><td>16.17</td><td>0.92x</td></tr>
+<tr><td>2 M</td><td>BoomerAMG</td><td>49.94</td><td>52.84</td><td>65.32</td><td>0.76x</td><td>38.23</td><td>43.83</td><td>72.11</td><td>0.53x</td></tr>
+<tr><td></td><td>AmgX</td><td>39.38</td><td>31.05</td><td>30.84</td><td><b>1.28x</b></td><td>27.17</td><td>21.24</td><td>23.62</td><td><b>1.16x</b></td></tr>
+<tr><td>4 M</td><td>BoomerAMG</td><td>81.87</td><td>80.00</td><td>86.67</td><td>0.94x</td><td>60.97</td><td>60.96</td><td>85.21</td><td>0.72x</td></tr>
+<tr><td></td><td>AmgX</td><td>77.67</td><td>58.01</td><td>51.78</td><td><b>1.50x</b></td><td>52.33</td><td>36.58</td><td>41.14</td><td><b>1.27x</b></td></tr>
+<tr><td>5 M</td><td>BoomerAMG</td><td>102.32</td><td>96.16</td><td>96.64</td><td>1.06x</td><td>76.65</td><td>77.49</td><td>93.30</td><td>0.81x</td></tr>
+<tr><td></td><td>AmgX</td><td>95.61</td><td>71.14</td><td>61.71</td><td><b>1.55x</b></td><td>63.77</td><td>43.91</td><td>42.26</td><td><b>1.51x</b></td></tr>
+</table></div></div></section><section class="wsec" id="performance"><div class="wrap"><span class="num">06 · Performance</span><h2>Speed on GB200 and VR72</h2><hr class="rule"><div class="gallery"><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/headline.jpg" data-group="nvrs-res" data-caption="Against OPM Flow. Wall clock on the three-phase benchmark, one GB200 each, with the time split into linear solve and the rest."><div class="ph"><img src="../assets/media/nvrs/headline_t.jpg" alt="Against OPM Flow" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Against OPM Flow</b>Wall clock on the three-phase benchmark, one GB200 each, with the time split into linear solve and the rest.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/all_models.jpg" data-group="nvrs-res" data-caption="Every model, one GPU. Wall clock per model and back end on GB200 and VR72, from 4,800 to 5 million cells."><div class="ph"><img src="../assets/media/nvrs/all_models_t.jpg" alt="Every model, one GPU" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Every model, one GPU</b>Wall clock per model and back end on GB200 and VR72, from 4,800 to 5 million cells.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/scaling_gb200.jpg" data-group="nvrs-res" data-caption="Scaling on GB200. One to four GPUs, AmgX and BoomerAMG, 4,800 to 5 million cells."><div class="ph"><img src="../assets/media/nvrs/scaling_gb200_t.jpg" alt="Scaling on GB200" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Scaling on GB200</b>One to four GPUs, AmgX and BoomerAMG, 4,800 to 5 million cells.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/scaling_vr72.jpg" data-group="nvrs-res" data-caption="Scaling on VR72. The same ladder on VR72."><div class="ph"><img src="../assets/media/nvrs/scaling_vr72_t.jpg" alt="Scaling on VR72" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Scaling on VR72</b>The same ladder on VR72.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/amg_reuse.jpg" data-group="nvrs-res" data-caption="Reusing the multigrid hierarchy. Freezing the AMG hierarchy across Newton iterations cuts the setup time by 8.7x on Norne."><div class="ph"><img src="../assets/media/nvrs/amg_reuse_t.jpg" alt="Reusing the multigrid hierarchy" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Reusing the multigrid hierarchy</b>Freezing the AMG hierarchy across Newton iterations cuts the setup time by 8.7x on Norne.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/profile_cpr.jpg" data-group="nvrs-res" data-caption="Inside the linear solve. Where the time goes inside CPR on Norne: AMG setup and V-cycles, stage 2, the operator and orthogonalisation."><div class="ph"><img src="../assets/media/nvrs/profile_cpr_t.jpg" alt="Inside the linear solve" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Inside the linear solve</b>Where the time goes inside CPR on Norne: AMG setup and V-cycles, stage 2, the operator and orthogonalisation.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/runtime_bench3p.jpg" data-group="nvrs-res" data-caption="Where the work goes. Wall clock by phase for OPM Flow and NVRS-CUDA on the benchmark."><div class="ph"><img src="../assets/media/nvrs/runtime_bench3p_t.jpg" alt="Where the work goes" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Where the work goes</b>Wall clock by phase for OPM Flow and NVRS-CUDA on the benchmark.</figcaption></figure></div></div></section><section class="wsec" id="precision"><div class="wrap"><span class="num">07 · Precision</span><h2>Mixed precision and emulated FP64</h2><hr class="rule"><div class="gallery"><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/cpr_pipeline.jpg" data-group="nvrs-prec" data-caption="Mixed-precision Newton-FGMRES-CPR. The pipeline of one Newton step and the precision of every stage."><div class="ph"><img src="../assets/media/nvrs/cpr_pipeline_t.jpg" alt="Mixed-precision Newton-FGMRES-CPR" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Mixed-precision Newton-FGMRES-CPR</b>The pipeline of one Newton step and the precision of every stage.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/precision_split.jpg" data-group="nvrs-prec" data-caption="Where each precision is spent. Share of time in native FP64, emulated FP64 and FP32 on Norne."><div class="ph"><img src="../assets/media/nvrs/precision_split_t.jpg" alt="Where each precision is spent" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Where each precision is spent</b>Share of time in native FP64, emulated FP64 and FP32 on Norne.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/roofline.jpg" data-group="nvrs-prec" data-caption="Roofline. Reservoir SpMV and AMG sit far into the memory-bound region: moving fewer bytes matters more than faster arithmetic."><div class="ph"><img src="../assets/media/nvrs/roofline_t.jpg" alt="Roofline" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Roofline</b>Reservoir SpMV and AMG sit far into the memory-bound region: moving fewer bytes matters more than faster arithmetic.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/measured_convergence.jpg" data-group="nvrs-prec" data-caption="Measured convergence. FP64 against mixed precision and mixed precision with emulated FP64, on GB200."><div class="ph"><img src="../assets/media/nvrs/measured_convergence_t.jpg" alt="Measured convergence" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Measured convergence</b>FP64 against mixed precision and mixed precision with emulated FP64, on GB200.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/convergence_grid.jpg" data-group="nvrs-prec" data-caption="Convergence across grid sizes. FP64 (solid) against mixed precision (dashed): the curves coincide."><div class="ph"><img src="../assets/media/nvrs/convergence_grid_t.jpg" alt="Convergence across grid sizes" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Convergence across grid sizes</b>FP64 (solid) against mixed precision (dashed): the curves coincide.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/emulation_accuracy.jpg" data-group="nvrs-prec" data-caption="Emulated FP64 accuracy. Double-word (Ozaki-split) arithmetic built from FP32 reaches FP64 accuracy."><div class="ph"><img src="../assets/media/nvrs/emulation_accuracy_t.jpg" alt="Emulated FP64 accuracy" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Emulated FP64 accuracy</b>Double-word (Ozaki-split) arithmetic built from FP32 reaches FP64 accuracy.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/emulation_convergence.jpg" data-group="nvrs-prec" data-caption="Emulated FP64 in the solver. Emulated-FP64 mixed precision tracks true FP64; plain FP32 stalls."><div class="ph"><img src="../assets/media/nvrs/emulation_convergence_t.jpg" alt="Emulated FP64 in the solver" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Emulated FP64 in the solver</b>Emulated-FP64 mixed precision tracks true FP64; plain FP32 stalls.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/speedup_projection.jpg" data-group="nvrs-prec" data-caption="Path to further speed-up. Projected solve speed-up as the preconditioner&#x27;s share of the per-iteration byte traffic grows."><div class="ph"><img src="../assets/media/nvrs/speedup_projection_t.jpg" alt="Path to further speed-up" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Path to further speed-up</b>Projected solve speed-up as the preconditioner&#x27;s share of the per-iteration byte traffic grows.</figcaption></figure></div></div></section><section class="wsec" id="accuracy"><div class="wrap"><span class="num">08 · Accuracy</span><h2>Norne and SPE10 against OPM Flow</h2><hr class="rule"><div class="gallery"><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/norne_permeability.jpg" data-group="nvrs-fld" data-caption="Norne permeability. The field model with its wells."><div class="ph"><img src="../assets/media/nvrs/norne_permeability_t.jpg" alt="Norne permeability" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Norne permeability</b>The field model with its wells.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/spe10_permeability.jpg" data-group="nvrs-fld" data-caption="SPE10 model 2 permeability. Six orders of magnitude of permeability on a log scale."><div class="ph"><img src="../assets/media/nvrs/spe10_permeability_t.jpg" alt="SPE10 model 2 permeability" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>SPE10 model 2 permeability</b>Six orders of magnitude of permeability on a log scale.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/norne_state.jpg" data-group="nvrs-fld" data-caption="Norne, final state. Pressure and saturations: OPM Flow, NVRS-CUDA and the difference."><div class="ph"><img src="../assets/media/nvrs/norne_state_t.jpg" alt="Norne, final state" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Norne, final state</b>Pressure and saturations: OPM Flow, NVRS-CUDA and the difference.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/norne_evolution.jpg" data-group="nvrs-fld" data-caption="Norne over time. Fields at selected report steps."><div class="ph"><img src="../assets/media/nvrs/norne_evolution_t.jpg" alt="Norne over time" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Norne over time</b>Fields at selected report steps.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/spe10_evolution.jpg" data-group="nvrs-fld" data-caption="SPE10 over time. The flood through the fluvial channels."><div class="ph"><img src="../assets/media/nvrs/spe10_evolution_t.jpg" alt="SPE10 over time" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>SPE10 over time</b>The flood through the fluvial channels.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/norne_oil_rates.jpg" data-group="nvrs-fld" data-caption="Oil rate of every producer. NVRS-CUDA against OPM Flow over the full history."><div class="ph"><img src="../assets/media/nvrs/norne_oil_rates_t.jpg" alt="Oil rate of every producer" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Oil rate of every producer</b>NVRS-CUDA against OPM Flow over the full history.</figcaption></figure><figure class="fig" tabindex="0" data-zoom="../assets/media/nvrs/norne_well_r2.jpg" data-group="nvrs-fld" data-caption="Agreement per well. R2 of every producer&#x27;s rates and pressures against OPM Flow."><div class="ph"><img src="../assets/media/nvrs/norne_well_r2_t.jpg" alt="Agreement per well" loading="lazy"><span class="zoomhint">click to zoom</span></div><figcaption><b>Agreement per well</b>R2 of every producer&#x27;s rates and pressures against OPM Flow.</figcaption></figure></div></div></section><section class="wsec" id="demo"><div class="wrap"><span class="num">09 · Precision lab</span><h2>FGMRES with a reduced-precision multigrid preconditioner</h2><hr class="rule">
+<p>The argument of the paper, run live. A heterogeneous pressure equation, the system that CPR's first stage
+solves, is handed to <b>flexible GMRES</b>, preconditioned by one <b>aggregation-multigrid V-cycle</b>, the role
+AmgX plays in stage 1 of CPR. With the outer FGMRES in FP64, running the V-cycle in FP32 or even FP16 changes
+how many iterations are needed, not the accuracy reached. When the outer recurrences drop to FP32 as well, the
+residual stalls near FP32 roundoff. Every curve is the true residual, evaluated in FP64.</p>
+<div class="demo" id="demo-precision">
+  <canvas class="plot" width="1100" height="430" aria-label="Residual histories"></canvas>
+  <div class="legend">
+    <span><i style="background:#e8e6e3"></i>FP64 FGMRES + FP64 V-cycle</span>
+    <span><i style="background:#00e5a0"></i>FP64 FGMRES + FP32 V-cycle (the paper's design)</span>
+    <span><i style="background:#ffb74d"></i>FP64 FGMRES + FP16 V-cycle</span>
+    <span><i style="background:#4fc3ff"></i>FP32 FGMRES + FP32 V-cycle</span>
+  </div>
+  <div class="controls">
+    <label>Grid <span class="v" data-for="n"></span><select name="n"><option value="32">32 x 32</option><option value="64" selected>64 x 64</option><option value="128">128 x 128</option></select></label>
+    <label>Permeability contrast <span class="v" data-for="contrast"></span><input type="range" name="contrast" min="0" max="6" step="1" value="4"></label>
+    <label>FGMRES restart <span class="v" data-for="restart"></span><input type="range" name="restart" min="5" max="40" step="1" value="30"></label>
+    <label>Maximum iterations <span class="v" data-for="maxit"></span><input type="range" name="maxit" min="20" max="160" step="10" value="80"></label>
+  </div>
+  <div class="dbtns"><button class="run">Solve</button></div>
+  <div class="readout"></div>
+  <p class="dnote">5-point finite volumes, harmonic transmissibilities, an injector and a producer; 2 x 2 aggregates with
+  Galerkin coarse operators, two damped-Jacobi sweeps before and after, exact coarsest solve. FP16 is emulated by
+  rounding every operation; the FP16 hierarchy uses the diagonally scaled matrix, because field-unit entries exceed
+  the largest half-precision number.</p>
+</div></div></section><section class="wsec" id="paper"><div class="wrap"><span class="num">10 · Paper and references</span><h2>Read more</h2><hr class="rule">
+<div class="cite">C. Etienam, T. Onishi, O. Ovcharenko, N. Luiken, I. Said.
+<i>A Mixed-Precision, GPU-Native Constrained-Pressure-Residual Solver for Fully Implicit Reservoir Simulation.</i>
+Submitted to arXiv, 2026.</div>
+<h3 style="font-family:Syne,sans-serif;font-size:15px;margin:26px 0 10px">Linear-algebra libraries</h3>
+<div class="cite" style="line-height:1.8">
+M. Naumov, M. Arsaev, P. Castonguay, J. Cohen, J. Demouth, J. Eaton, S. Layton, N. Markovskiy, I. Reguly,
+N. Sakharnykh, V. Sellappan, R. Strzodka. <i>AmgX: a library for GPU accelerated algebraic multigrid and
+preconditioned iterative methods.</i> SIAM Journal on Scientific Computing 37(5), S602&ndash;S626, 2015.
+<a href="https://github.com/NVIDIA/AMGX" target="_blank" rel="noopener">github.com/NVIDIA/AMGX</a><br><br>
+V. E. Henson, U. M. Yang. <i>BoomerAMG: a parallel algebraic multigrid solver and preconditioner.</i>
+Applied Numerical Mathematics 41(1), 155&ndash;177, 2002.<br>
+R. D. Falgout, U. M. Yang. <i>hypre: a library of high performance preconditioners.</i>
+Computational Science, ICCS 2002, Lecture Notes in Computer Science 2331, 632&ndash;641, Springer, 2002.
+<a href="https://github.com/hypre-space/hypre" target="_blank" rel="noopener">github.com/hypre-space/hypre</a><br><br>
+H. Anzt, T. Cojean, G. Flegar, F. G&ouml;bel, T. Gr&uuml;tzmacher, P. Nayak, T. Ribizel, Y. M. Tsai,
+E. S. Quintana-Ort&iacute;. <i>Ginkgo: a modern linear operator algebra framework for high performance
+computing.</i> ACM Transactions on Mathematical Software 48(1), 1&ndash;33, 2022.
+<a href="https://github.com/ginkgo-project/ginkgo" target="_blank" rel="noopener">github.com/ginkgo-project/ginkgo</a><br><br>
+Y. Saad. <i>A flexible inner-outer preconditioned GMRES algorithm.</i> SIAM Journal on Scientific Computing
+14(2), 461&ndash;469, 1993.<br>
+J. R. Wallis, R. P. Kendall, T. E. Little. <i>Constrained residual acceleration of conjugate residual methods.</i>
+SPE Reservoir Simulation Symposium, SPE 13536, 1985.
+</div></div></section>
+<section class="wsec"><div class="wrap"><span class="num">More</span><h2>Other featured work</h2><hr class="rule">
+<div class="next"><a href="pino-norne.html"><small>Featured work</small>PINO · Norne</a><a href="physicsnemo-sym.html"><small>Featured work</small>PhysicsNeMo-Sym</a><a href="../index.html"><small>Home</small>Clement Etienam</a></div></div></section>
+<footer class="wfoot"><div class="wrap"><span>&copy; 2026 Clement Etienam</span><span>Click any figure or movie to zoom: wheel or pinch to zoom, drag to pan, arrow keys to step.</span></div></footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script>
+document.querySelectorAll('.eq-render').forEach(function (el) {
+  try { katex.render(el.getAttribute('data-eq'), el, {throwOnError: false, displayMode: true}); } catch (e) {}
+});
+</script>
+<script src="../assets/js/lightbox.js?v=20261004191428"></script>
+<script src="../assets/js/demos/nvrs_engine.js?v=20261004191428"></script>
+<script src="../assets/js/demos/nvrs_sim.js?v=20261004191428"></script>
+<script src="../assets/js/demos/scaling.js?v=20261004191428"></script>
+<script src="../assets/js/demos/precision.js?v=20261004191428"></script>
+
+</body>
+</html>
