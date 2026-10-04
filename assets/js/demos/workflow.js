@@ -8,8 +8,8 @@
                  recorded: producer water cut, oil rate, injector pressure;
      3 train     a neural surrogate xi -> production (an MLP, Adam), live;
      4 validate  on held-out simulations: accuracy and measured speed-up;
-     5 invert    alpha-REKI (adaptive alpha from the data misfit, stopped when
-                 sum 1/alpha = 1) or ES-MDA (alpha = number of assimilations) on
+     5 invert    alpha-REKI (1/alpha from the mean and variance of the data
+                 misfit, Iglesias and Yang; stopped when sum 1/alpha = 1) or ES-MDA (alpha = number of assimilations) on
                  xi, the surrogate as forward model, against noisy observations
                  of a hidden "true" field;
      6 verify    the simulator run on the matched model.
@@ -117,11 +117,8 @@
     return loss / (X.length * Y[0].length);
   }
   // ---- drawing
-  function viridis(x) {
-    const st = [[68, 1, 84], [59, 82, 139], [33, 145, 140], [94, 201, 98], [253, 231, 37]];
-    x = Math.min(0.999, Math.max(0, x)) * 4; const i = Math.floor(x), f = x - i;
-    return st[i].map((q, c) => Math.round(q + (st[i + 1][c] - q) * f));
-  }
+  function viridis(t) {   // jet colour map (name kept for its callers)
+    const x = Math.min(1, Math.max(0, t)); return [1.5 - Math.abs(4 * x - 3), 1.5 - Math.abs(4 * x - 2), 1.5 - Math.abs(4 * x - 1)].map(v => Math.round(255 * Math.min(1, Math.max(0, v)))); }
   function drawMaps(fields, titles) {
     const W = mapCv.width, H = mapCv.height;
     mc.fillStyle = "#07070a"; mc.fillRect(0, 0, W, H);
@@ -133,7 +130,7 @@
       const x = gap + idx * (size + gap);
       mc.imageSmoothingEnabled = true; mc.drawImage(off, x, 28, size, size);
       mc.fillStyle = "#e8e6e3"; mc.font = "12px DM Mono, monospace"; mc.fillText(titles[idx], x, 18);
-      for (const [cell, col] of [[2 * n + 2, "#4fc3ff"], [(n - 3) * n + (n - 3), "#00e5a0"]]) {
+      for (const [cell, col] of [[2 * n + 2, "#ffffff"], [(n - 3) * n + (n - 3), "#ff00ff"]]) {
         mc.beginPath(); mc.arc(x + ((cell % n) + 0.5) * size / n, 28 + (Math.floor(cell / n) + 0.5) * size / n, 5, 0, 7);
         mc.fillStyle = col; mc.fill(); mc.strokeStyle = "#000"; mc.stroke();
       }
@@ -153,7 +150,7 @@
         cc.beginPath(); cc.strokeStyle = s.col; cc.lineWidth = s.w || 1;
         RT.forEach((tt, i) => { const v = Math.min(1.05, Math.max(0, s.y[off + i])); i ? cc.lineTo(X(tt), Y(v)) : cc.moveTo(X(tt), Y(v)); });
         if (!s.dots) cc.stroke();
-        if (s.dots) RT.forEach((tt, i) => { cc.beginPath(); cc.arc(X(tt), Y(Math.min(1.05, Math.max(0, s.y[off + i]))), 3, 0, 7); cc.fillStyle = "#fff"; cc.fill(); });
+        if (s.dots) RT.forEach((tt, i) => { cc.beginPath(); cc.arc(X(tt), Y(Math.min(1.05, Math.max(0, s.y[off + i]))), 3, 0, 7); cc.fillStyle = "#ff4d4d"; cc.fill(); cc.strokeStyle = "#000"; cc.lineWidth = 1; cc.stroke(); });
       }
     });
   }
@@ -230,7 +227,7 @@
     const t0 = performance.now(); const preds = Xv.map(g); const surMs = (performance.now() - t0) / Xv.length;
     preds.forEach((p, s) => { for (let j = 0; j < 3 * NR; j++) { ss += (p[j] - Yv[s][j]) ** 2; st += (Yv[s][j] - mu[j]) ** 2; } });
     const R2 = 1 - ss / st;
-    drawCurves([{ y: Yv[0], col: "#4fc3ff", w: 2.2 }, { y: preds[0], col: "#ffb74d", w: 2.2 }], "held-out run: simulator (blue) against surrogate (orange)");
+    drawCurves([{ y: Yv[0], col: "#ff4d4d", w: 2.2 }, { y: preds[0], col: "#4fa0ff", w: 2.2 }], "held-out run: simulator (red) against surrogate (blue)");
     log("&nbsp;&nbsp; R2 = " + R2.toFixed(3) + " on unseen runs; surrogate " + surMs.toFixed(3) + " ms against simulator " + simAvg.toFixed(0) +
         " ms per run, " + Math.round(simAvg / Math.max(surMs, 1e-3)) + " times faster.");
     stage(4, "done"); await tick();
@@ -246,7 +243,11 @@
     let ens = Array.from({ length: Ne }, () => Array.from({ length: MD }, () => gaussFrom(re)));
     const meanOf = A => A[0].map((_, j) => A.reduce((s, a) => s + a[j], 0) / A.length);
     const obsY = new Float64Array(3 * NR); obsIdx.forEach((i, p) => { obsY[i] = dobs[p]; });
-    drawMaps([logK(xiTrue), logK(meanOf(ens))], ["true field (hidden)", "prior mean"]);
+    const priorMeanK = logK(meanOf(ens));
+    drawMaps([logK(xiTrue), priorMeanK], ["true field", "prior mean"]);
+    drawCurves([...ens.slice(0, 40).map(u => ({ y: g(u), col: "rgba(79,160,255,.25)" })), { y: truth.y, col: "#ff4d4d", w: 2 }, { y: obsY, dots: true }],
+               "prior ensemble (blue), true model (red), observed (red dots)");
+    await new Promise(res => setTimeout(res, 700));
     function kalman(alpha) {
       const D = ens.map(u => { const y = g(u); return obsIdx.map(i => y[i]); });
       const um = meanOf(ens), dm = meanOf(D);
@@ -265,26 +266,24 @@
         return u.map((v, q) => v + Cud[q].reduce((s, c, p) => s + c * w[p], 0));
       });
     }
-    function phiBar() {                        // mean of 1/2 || C_d^-1/2 (G(m_j) - d) ||^2
-      let s = 0;
-      for (const u of ens) { const y = g(u); obsIdx.forEach((i, p) => { s += 0.5 * ((y[i] - dobs[p]) / sdObs) ** 2; }); }
-      return s / Ne;
+    function phis() {                          // 1/2 || C_d^-1/2 (G(m_j) - d) ||^2 per member
+      return ens.map(u => { const y = g(u); let s = 0; obsIdx.forEach((i, p) => { s += 0.5 * ((y[i] - dobs[p]) / sdObs) ** 2; }); return s; });
     }
-    let sumInv = 0, alphaPrev = Infinity, it = 0;
+    let sumInv = 0, it = 0;
     const maxIt = method === "areki" ? 20 : Na;
     while (it < maxIt) {
       let alpha;
       if (method === "esmda") alpha = Na;
       else {
-        alpha = Math.min(m / (2 * phiBar()), 0.9 * alphaPrev);
-        alpha = Math.max(alpha, 1);
-        if (sumInv + 1 / alpha >= 1) alpha = 1 / (1 - sumInv);   // land exactly on sum 1/alpha = 1
+        // Iglesias and Yang: 1/alpha = max(n_d / (2 mean Phi), sqrt(n_d / (2 var Phi))), capped at 1 - sum 1/alpha
+        const ph = phis(), mu = ph.reduce((a, b) => a + b, 0) / Ne, va = ph.reduce((a, b) => a + (b - mu) ** 2, 0) / Ne;
+        alpha = 1 / Math.min(Math.max(m / (2 * mu), Math.sqrt(m / (2 * va))), 1 - sumInv);
       }
-      kalman(alpha); sumInv += 1 / alpha; alphaPrev = alpha; it++;
+      kalman(alpha); sumInv += 1 / alpha; it++;
       const pm = g(meanOf(ens));
-      drawMaps([logK(xiTrue), logK(meanOf(ens))], ["true field (hidden)", "posterior mean, iteration " + it]);
-      drawCurves([...ens.slice(0, 40).map(u => ({ y: g(u), col: "rgba(0,229,160,.18)" })), { y: pm, col: "#00e5a0", w: 2.2 }, { y: obsY, dots: true }],
-                 "observed (dots) and ensemble predictions, iteration " + it);
+      drawMaps([logK(xiTrue), priorMeanK, logK(meanOf(ens))], ["true field", "prior mean", "mean, iteration " + it]);
+      drawCurves([...ens.slice(0, 40).map(u => ({ y: g(u), col: "rgba(79,160,255,.25)" })), { y: pm, col: "#4fa0ff", w: 2.2 }, { y: truth.y, col: "#ff4d4d", w: 2 }, { y: obsY, dots: true }],
+                 "ensemble (blue), true model (red), observed (red dots), iteration " + it);
       let mis = 0; obsIdx.forEach((i, p) => { mis += (pm[i] - dobs[p]) ** 2; });
       log("&nbsp;&nbsp; iteration " + it + ": alpha = " + alpha.toFixed(2) + ", sum 1/alpha = " + Math.min(1, sumInv).toFixed(3) +
           ", RMS misfit of the posterior mean " + Math.sqrt(mis / m).toFixed(3));
@@ -297,8 +296,9 @@
     stage(6); log("6. Verifying: the simulator run on the matched model.");
     const xm = meanOf(ens), ver = simulate(xm);
     const priorMean = g(meanOf(Array.from({ length: Ne }, () => Array.from({ length: MD }, () => 0))));
-    drawCurves([{ y: priorMean, col: "rgba(255,255,255,.35)", w: 1.5 }, { y: ver.y, col: "#ffb74d", w: 2.4 }, { y: obsY, dots: true }],
-               "simulator on the matched model (orange), prior mean (grey), observed (dots)");
+    drawCurves([{ y: priorMean, col: "rgba(255,255,255,.35)", w: 1.5 }, { y: ver.y, col: "#4fa0ff", w: 2.4 }, { y: truth.y, col: "#ff4d4d", w: 2 }, { y: obsY, dots: true }],
+               "simulator on the matched model (blue), true model (red), prior mean (grey)");
+    drawMaps([logK(xiTrue), priorMeanK, logK(xm)], ["true field", "prior mean", "matched (posterior mean)"]);
     let e0 = 0, e1 = 0; obsIdx.forEach((i, p) => { e0 += (priorMean[i] - dobs[p]) ** 2; e1 += (ver.y[i] - dobs[p]) ** 2; });
     let fe = 0, f0 = 0; const lt = logK(xiTrue), lm = logK(xm), lp = new Float64Array(n * n);
     for (let k = 0; k < n * n; k++) { fe += (lm[k] - lt[k]) ** 2; f0 += (lp[k] - lt[k]) ** 2; }

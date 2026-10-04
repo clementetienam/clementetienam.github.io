@@ -60,10 +60,20 @@
       if (j < n - 1) ty[k] = 2 * K[k] * K[k + n] / (K[k] + K[k + n]);
     }
     const prod = (n - 3) * n + (n - 3);
-    return { n, N, K, tx, ty, visc: o.visc, inj: 2 * n + 2, prod, Q: N / 1000,          // one pore volume (phi = 0.2) every 200 time units
+    // wells: one corner-to-corner pair (default) or a five-spot, one central
+    // injector and a producer in each corner
+    const c = n >> 1, e = 1, f = n - 2;
+    // or an inverted nine-spot, with producers also at the edge midpoints
+    const nine = [e * n + e, e * n + c, e * n + f, c * n + e, c * n + f, f * n + e, f * n + c, f * n + f];
+    const injs = o.wells === "fivespot" || o.wells === "ninespot" ? [c * n + c] : [2 * n + 2];
+    const prods = o.wells === "fivespot" ? [e * n + e, e * n + f, f * n + e, f * n + f] : o.wells === "ninespot" ? nine : [prod];
+    return { n, N, K, tx, ty, visc: o.visc, inj: injs[0], prod: prods[0], injs, prods, Q: N / 1000,          // one pore volume (phi = 0.2) every 200 time units
              // productivity index chosen so that the initial oil rate at the
              // producer (p - p_bhp = 1, lambda_o = 1/visc) balances injection
-             pbhp: 0, PI: (N / 1000) * o.visc,
+             pbhp: 0, PI: (N / 1000) * o.visc / prods.length,
+             // Peaceman-type well index, proportional to the well-cell
+             // permeability in the five-spot; uniform otherwise
+             WI: prods.map(k => o.wells === "fivespot" || o.wells === "ninespot" ? K[k] : 1),
              p: new Float64Array(N).fill(1), S: new Float64Array(N).fill(swc),
              t: 0, dt: o.dt0 || 0.5, chop: 0, clean: 0, steps: 0, newton: 0, krylov: 0 };
   }
@@ -103,14 +113,16 @@
       if (i < n - 1) face(k, k + 1, tx[k], J ? J.E : null, J ? J.W : null);
       if (j < n - 1) face(k, k + n, ty[k], J ? J.Nn : null, J ? J.Sd : null);
     }
-    R[2 * M.inj] -= M.Q;                       // water injected at a fixed rate
-    const k = M.prod, m = mb[k], dpw = p[k] - M.pbhp;   // producer at fixed BHP
-    R[2 * k] += M.PI * m[0] * dpw; R[2 * k + 1] += M.PI * m[1] * dpw;
-    if (J) {
-      const o = 4 * k;
-      J.D[o] += M.PI * m[0]; J.D[o + 2] += M.PI * m[1];
-      J.D[o + 1] += M.PI * m[2] * dpw; J.D[o + 3] += M.PI * m[3] * dpw;
-    }
+    for (const k of M.injs) R[2 * k] -= M.Q / M.injs.length;   // water injected at a fixed rate
+    M.prods.forEach((k, w) => {                                 // producers at fixed BHP
+      const m = mb[k], dpw = p[k] - M.pbhp, PI = M.PI * M.WI[w];
+      R[2 * k] += PI * m[0] * dpw; R[2 * k + 1] += PI * m[1] * dpw;
+      if (J) {
+        const o = 4 * k;
+        J.D[o] += PI * m[0]; J.D[o + 2] += PI * m[1];
+        J.D[o + 1] += PI * m[2] * dpw; J.D[o + 3] += PI * m[3] * dpw;
+      }
+    });
     return { R, J };
   }
   function jmul(M, J, x, y) {
@@ -354,9 +366,11 @@
     M.t = t0;
     return null;
   }
-  function wellRates(M) {
-    const k = M.prod, m = mob(M.S[k], M.visc), dp = M.p[k] - M.pbhp;
-    const qw = M.PI * m[0] * dp, qo = M.PI * m[1] * dp;
+  function wellRates(M, k) {
+    k = k === undefined ? M.prod : k;
+    const w = Math.max(0, M.prods.indexOf(k)), PI = M.PI * M.WI[w];
+    const m = mob(M.S[k], M.visc), dp = M.p[k] - M.pbhp;
+    const qw = PI * m[0] * dp, qo = PI * m[1] * dp;
     return { qw, qo, wcut: qw + qo > 0 ? qw / (qw + qo) : 0, pinj: M.p[M.inj] };
   }
   window.NVRS = { model, step, timeStep, mob: (s, v) => mob(s, v), wellRates, randomLogK, swc, sor };

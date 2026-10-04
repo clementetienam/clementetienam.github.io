@@ -128,8 +128,8 @@
     // parameter space
     let W = pa.width, H = pa.height;
     let [X, Y] = axes(ca, W, H, 40, 30, [-3, 3], [-3, 3], "u1  (log near-well permeability)", "u2 (connectivity)");
-    for (const u of ens) { ca.beginPath(); ca.arc(X(u[0]), Y(u[1]), 3, 0, 7); ca.fillStyle = "rgba(79,195,255,.75)"; ca.fill(); }
-    ca.fillStyle = "#ff6b6b"; ca.font = "20px serif"; ca.fillText("★", X(truth[0]) - 8, Y(truth[1]) + 7);
+    for (const u of ens) { ca.beginPath(); ca.arc(X(u[0]), Y(u[1]), 3, 0, 7); ca.fillStyle = "rgba(79,160,255,.75)"; ca.fill(); }
+    ca.fillStyle = "#ff4d4d"; ca.font = "20px serif"; ca.fillText("★", X(truth[0]) - 8, Y(truth[1]) + 7);
     ca.fillStyle = "#e8e6e3"; ca.font = "11px DM Mono, monospace";
     ca.fillText((P_.method === "areki" ? "alpha-REKI, iteration " + stepNo + (stepNo ? ", alpha " + lastAlpha.toFixed(1) + ", sum 1/alpha " + Math.min(1, sumInv).toFixed(2) : "")
                  : "ES-MDA, " + stepNo + " of " + (P_.na | 0) + " assimilations") + "   ★ truth", 46, 24);
@@ -138,31 +138,33 @@
     [X, Y] = axes(cb, W, H, 40, 30, [0, T], [0, 1], "time (report steps)", "water cut");
     for (const u of ens) {
       const d = g(u);
-      for (const [o, col] of [[0, "rgba(79,195,255,.18)"], [T, "rgba(0,229,160,.18)"]]) {
+      for (const [o, col] of [[0, "rgba(79,160,255,.22)"], [T, "rgba(79,160,255,.22)"]]) {
         cb.beginPath(); cb.strokeStyle = col; cb.lineWidth = 1;
         for (let k = 0; k < T; k++) k ? cb.lineTo(X(k + 1), Y(d[o + k])) : cb.moveTo(X(k + 1), Y(d[o + k]));
         cb.stroke();
       }
     }
-    for (const [o, col] of [[0, "#4fc3ff"], [T, "#00e5a0"]]) {
-      for (let k = 0; k < T; k++) { cb.beginPath(); cb.arc(X(k + 1), Y(dobs[o + k]), 3.2, 0, 7); cb.fillStyle = "#fff"; cb.fill(); cb.strokeStyle = col; cb.lineWidth = 1.5; cb.stroke(); }
+    const dt = g(truth);
+    for (const o of [0, T]) {
+      cb.beginPath(); cb.strokeStyle = "#ff4d4d"; cb.lineWidth = 2;
+      for (let k = 0; k < T; k++) k ? cb.lineTo(X(k + 1), Y(dt[o + k])) : cb.moveTo(X(k + 1), Y(dt[o + k]));
+      cb.stroke(); cb.lineWidth = 1;
+      for (let k = 0; k < T; k++) { cb.beginPath(); cb.arc(X(k + 1), Y(dobs[o + k]), 3, 0, 7); cb.fillStyle = "#ff4d4d"; cb.fill(); cb.strokeStyle = "#000"; cb.stroke(); }
     }
-    cb.fillStyle = "#e8e6e3"; cb.fillText("observed (dots) and ensemble predictions, producers 1 and 2", 46, 24);
+    cb.fillStyle = "#e8e6e3"; cb.fillText("ensemble (blue), true model (red line), observed (red dots); producers 1 and 2", 46, 24);
     $(".readout").textContent = "data misfit (RMS): " + hist.map(v => v.toFixed(3)).join(" → ");
   }
   let sumInv = 0, alphaPrev = Infinity, lastAlpha = 0;
-  function phiBar() {
-    let s = 0;
-    for (const u of ens) { const d = g(u); for (let k = 0; k < 2 * T; k++) s += 0.5 * ((d[k] - dobs[k]) / P_.noise) ** 2; }
-    return s / ens.length;
+  function phis() {
+    return ens.map(u => { const d = g(u); let s = 0; for (let k = 0; k < 2 * T; k++) s += 0.5 * ((d[k] - dobs[k]) / P_.noise) ** 2; return s; });
   }
   function finished() { return P_.method === "areki" ? sumInv >= 1 - 1e-9 || stepNo >= 20 : stepNo >= (P_.na | 0); }
   function next() {
     if (finished()) { clearInterval(timer); timer = 0; $(".run").textContent = "Assimilate"; return; }
     let alpha = P_.na;
-    if (P_.method === "areki") {             // alpha-REKI: alpha from the data misfit, sum 1/alpha = 1
-      alpha = Math.max(1, Math.min(2 * T / (2 * phiBar()), 0.9 * alphaPrev));
-      if (sumInv + 1 / alpha >= 1) alpha = 1 / (1 - sumInv);
+    if (P_.method === "areki") {             // alpha-REKI (Iglesias and Yang), stopped at sum 1/alpha = 1
+      const ph = phis(), Ne = ph.length, mu = ph.reduce((a, b) => a + b, 0) / Ne, va = ph.reduce((a, b) => a + (b - mu) ** 2, 0) / Ne;
+      alpha = 1 / Math.min(Math.max(2 * T / (2 * mu), Math.sqrt(2 * T / (2 * va))), 1 - sumInv);
     }
     update(alpha); sumInv += 1 / alpha; alphaPrev = alpha; lastAlpha = alpha;
     stepNo++; hist.push(misfit()); draw();

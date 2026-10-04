@@ -133,17 +133,9 @@
     for (let k = 0; k < NN; k++) oip += phi[k] * (1 - S[k]);
     hist.push([pvi, fprod, 1 - oip / (pv * (1 - swc))]);
   }
-  const cmapW = s => {                          // oil (brown) -> water (blue)
-    const x = Math.min(1, Math.max(0, (s - swc) / (1 - swc - sor)));
-    const a = [74, 52, 26], b = [40, 110, 210], c = [150, 210, 255];
-    const m = x < 0.6 ? [a, b, x / 0.6] : [b, c, (x - 0.6) / 0.4];
-    return m[0].map((v, i) => Math.round(v + (m[1][i] - v) * m[2]));
-  };
-  const cmapK = z => {                          // viridis-like for log K
-    const st = [[68, 1, 84], [59, 82, 139], [33, 145, 140], [94, 201, 98], [253, 231, 37]];
-    const x = Math.min(0.999, Math.max(0, z)) * 4, i = Math.floor(x), f = x - i;
-    return st[i].map((v, c) => Math.round(v + (st[i + 1][c] - v) * f));
-  };
+  const jet = t => { const x = Math.min(1, Math.max(0, t)); return [1.5 - Math.abs(4 * x - 3), 1.5 - Math.abs(4 * x - 2), 1.5 - Math.abs(4 * x - 1)].map(v => Math.round(255 * Math.min(1, Math.max(0, v)))); }
+  const cmapW = s => jet((s - swc) / (1 - swc - sor));     // jet: oil (blue) to water (red)
+  const cmapK = z => jet(z);
   function draw() {
     const W = map.width, H = map.height, img = mc.createImageData(N, N);
     let lo = Infinity, hi = -Infinity;
@@ -158,7 +150,7 @@
     mc.imageSmoothingEnabled = true;
     mc.drawImage(off, 0, 0, W, H);
     const cx = k => ((k % N) + 0.5) * W / N, cy = k => (Math.floor(k / N) + 0.5) * H / N;
-    for (const [k, col, lab] of [[inj, "#4fc3ff", "INJ"], [prod, "#00e5a0", "PROD"]]) {
+    for (const [k, col, lab] of [[inj, "#ffffff", "INJ"], [prod, "#ff00ff", "PROD"]]) {
       mc.beginPath(); mc.arc(cx(k), cy(k), 9, 0, 7); mc.fillStyle = col; mc.fill();
       mc.lineWidth = 2; mc.strokeStyle = "#000"; mc.stroke();
       mc.fillStyle = "#fff"; mc.font = "12px DM Mono, monospace";

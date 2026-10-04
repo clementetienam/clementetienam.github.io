@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
-<link rel="stylesheet" href="../assets/css/work.css?v=20261004191428">
+<link rel="stylesheet" href="../assets/css/work.css?v=20261004201845">
 </head>
 <body>
 <nav class="wnav">
@@ -54,9 +54,11 @@ iteration counts, the time per stage and the solution.</p>
       <canvas class="conv" width="560" height="250" aria-label="Newton and FGMRES convergence"></canvas>
     </div>
   </div>
+  <canvas class="wells" width="1160" height="250" aria-label="Well curves against the FP64 reference" style="margin-top:12px"></canvas>
   <div class="controls">
     <label>Preconditioner precision <select name="prec"><option value="fp64">FP64</option><option value="fp32" selected>FP32 (the paper)</option><option value="fp16">FP16</option></select></label>
-    <label>Grid <select name="n"><option value="16" selected>16 x 16</option><option value="32">32 x 32</option><option value="64">64 x 64</option></select></label>
+    <label>Wells <select name="wells"><option value="fivespot" selected>five-spot (1 injector, 4 producers)</option><option value="pair">quarter five-spot (corner to corner)</option></select></label>
+    <label>Grid <select name="n"><option value="16" selected>16 x 16</option><option value="32">32 x 32 (slower)</option></select></label>
     <label>Heterogeneity (std of ln K) <span class="v" data-for="sigma"></span><input type="range" name="sigma" min="0.2" max="3" step="0.1" value="1.5"></label>
     <label>Oil/water viscosity ratio <span class="v" data-for="visc"></span><input type="range" name="visc" min="1" max="20" step="1" value="5"></label>
     <label>Geology seed <span class="v" data-for="seed"></span><input type="range" name="seed" min="1" max="30" step="1" value="3"></label>
@@ -67,8 +69,11 @@ iteration counts, the time per stage and the solution.</p>
   </div>
   <div class="dbtns"><button class="run">Run</button><button class="step ghost">One time step</button><button class="compare ghost">Compare FP64 / FP32 / FP16 on the next step</button><button class="reset ghost">Reset</button></div>
   <div class="cmp"></div>
-  <p class="dnote">Corey relative permeability, slightly compressible rock, water injected at a fixed rate in one corner and
-  a producer at fixed bottom-hole pressure in the other. Newton, the update limits and the time-step control use the
+  <p class="dnote">Two-phase oil and water, Corey relative permeability, slightly compressible rock. In the five-spot, water
+  is injected at a fixed rate in the centre and four producers at fixed bottom-hole pressure sit in the corners, with a
+  Peaceman-type well index proportional to the well-cell permeability. Every run is repeated with an FP64 preconditioner
+  as the reference (red); the curves of the chosen precision (blue) lie on it. The model has no gas phase, so there is
+  no WGPR. Newton, the update limits and the time-step control use the
   same settings as the simulator in the paper: OPM Flow's convergence test (CNV below 1e-2 and material balance below
   1e-6 in every phase), at most 20 Newton iterations, saturation changes limited to 0.2 per iteration, FGMRES(30) to a
   relative 1e-6, and dyadic chopping of each report step (up to six halvings, one released after two clean report
@@ -133,7 +138,7 @@ residual stalls near FP32 roundoff. Every curve is the true residual, evaluated 
     <span><i style="background:#4fc3ff"></i>FP32 FGMRES + FP32 V-cycle</span>
   </div>
   <div class="controls">
-    <label>Grid <span class="v" data-for="n"></span><select name="n"><option value="32">32 x 32</option><option value="64" selected>64 x 64</option><option value="128">128 x 128</option></select></label>
+    <label>Grid <span class="v" data-for="n"></span><select name="n"><option value="16">16 x 16</option><option value="32" selected>32 x 32</option></select></label>
     <label>Permeability contrast <span class="v" data-for="contrast"></span><input type="range" name="contrast" min="0" max="6" step="1" value="4"></label>
     <label>FGMRES restart <span class="v" data-for="restart"></span><input type="range" name="restart" min="5" max="40" step="1" value="30"></label>
     <label>Maximum iterations <span class="v" data-for="maxit"></span><input type="range" name="maxit" min="20" max="160" step="10" value="80"></label>
@@ -177,11 +182,11 @@ document.querySelectorAll('.eq-render').forEach(function (el) {
   try { katex.render(el.getAttribute('data-eq'), el, {throwOnError: false, displayMode: true}); } catch (e) {}
 });
 </script>
-<script src="../assets/js/lightbox.js?v=20261004191428"></script>
-<script src="../assets/js/demos/nvrs_engine.js?v=20261004191428"></script>
-<script src="../assets/js/demos/nvrs_sim.js?v=20261004191428"></script>
-<script src="../assets/js/demos/scaling.js?v=20261004191428"></script>
-<script src="../assets/js/demos/precision.js?v=20261004191428"></script>
+<script src="../assets/js/lightbox.js?v=20261004201845"></script>
+<script src="../assets/js/demos/nvrs_engine.js?v=20261004201845"></script>
+<script src="../assets/js/demos/nvrs_sim.js?v=20261004201845"></script>
+<script src="../assets/js/demos/scaling.js?v=20261004201845"></script>
+<script src="../assets/js/demos/precision.js?v=20261004201845"></script>
 
 </body>
 </html>
