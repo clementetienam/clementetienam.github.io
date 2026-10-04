@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
-<link rel="stylesheet" href="../assets/css/work.css?v=20261004222027">
+<link rel="stylesheet" href="../assets/css/work.css?v=20261004233133">
 </head>
 <body>
 <nav class="wnav">
@@ -30,25 +30,27 @@
 workflow on a real field model: a Fourier or physics-informed neural operator that advances the black-oil
 state, a Cluster-Classify-Regress mixture of experts for the well rates, and an adaptive regularised ensemble
 Kalman inversion that recovers permeability, porosity and fault multipliers from production data.</p><div class="cols"><div class="card"><h3>Forward surrogate (FNO / PINO)</h3><p>A neural operator maps permeability, porosity, fault multipliers and controls to pressure and saturations at every report step, trained with data and the PDE residual.</p></div><div class="card"><h3>Well rates (CCR)</h3><p>Cluster-Classify-Regress, a mixture of experts built for discontinuous responses, maps the predicted state at the wells to oil, water and gas rates.</p></div><div class="card"><h3>Inverse problem (alpha-REKI or ES-MDA)</h3><p>Adaptive regularised ensemble Kalman inversion, or the ensemble smoother with multiple data assimilation, with covariance localisation, conditions the ensemble on the field history.</p></div><div class="card"><h3>Sequential and physics-constrained</h3><p>Autoregressive training on the model&#x27;s own predictions removes the exposure bias of teacher forcing over long rollouts.</p></div></div></div></section><section class="wsec" id="maths"><div class="wrap"><span class="num">02 · Mathematics</span><h2>What is being learned</h2><hr class="rule"><div class="eq"><div class="eq-render" data-eq="\frac{\partial}{\partial t}\Big(\phi\, b_\alpha S_\alpha\Big) - \nabla\cdot\big(b_\alpha \lambda_\alpha \mathbf{K}\,\nabla\Phi_\alpha\big) = b_\alpha q_\alpha,\qquad \alpha\in\{w,o,g\}"></div><p class="dnote" style="margin-top:8px">Black-oil mass conservation for water, oil and gas, with dissolved gas and Peaceman well terms.</p></div><div class="eq"><div class="eq-render" data-eq="\mathcal{L}(\theta)=\mathbb{E}\Big[\sum_{n}\big\|\hat x_{n+1}-x_{n+1}\big\|^2\Big]+\lambda_R\,\mathbb{E}\Big[\sum_n\big\|R(\hat x_{n+1},\hat x_n;u)\big\|^2\Big],\qquad \hat x_{n+1}=\mathcal{G}_\theta(u,\hat x_n)"></div><p class="dnote" style="margin-top:8px">Autoregressive data loss plus the discretised PDE residual R: the physics-informed neural operator objective.</p></div><div class="eq"><div class="eq-render" data-eq="u_j^{\,i+1}=u_j^{\,i}+C_{ud}\big(C_{dd}+\alpha_i C_e\big)^{-1}\big(d_{\rm obs}+\sqrt{\alpha_i}\,e_j-\mathcal{G}(u_j^{\,i})\big),\qquad \sum_i \alpha_i^{-1}=1"></div><p class="dnote" style="margin-top:8px">The ensemble Kalman update with the surrogate in place of the simulator. alpha-REKI chooses alpha_i = min(n_d / (2 Phi_i), rho alpha_(i-1)) from the mean data misfit Phi_i and stops when the sum of 1/alpha_i reaches one; ES-MDA uses alpha_i = N_a for N_a assimilations.</p></div></div></section><section class="wsec" id="workflow"><div class="wrap"><span class="num">03 · The workflow, live</span><h2>Simulate, train, validate, history-match, verify</h2><hr class="rule">
-<p>The whole workflow of the paper, end to end, in your browser. Permeability fields are drawn from a prior; each one is
-run to the end of the schedule by the <b>mixed-precision simulator</b> (Newton, FP64 FGMRES, two-stage CPR with an
-FP32 multigrid V-cycle and 2 x 2 block Jacobi); a <b>CCR surrogate</b> (cluster-classify-regress) is trained on the runs and checked against
-held-out simulations; the surrogate then drives <b>history matching</b> with alpha-REKI or ES-MDA against noisy data
-from a hidden field; and the simulator is run on the matched model to verify it.</p>
+<p>The workflow of the paper, end to end, in your browser, on a five-spot with a Gaussian permeability prior. The forward
+model has two stages, as in the paper: an <b>FNO</b> or a <b>PINO</b> (the same operator trained with the discrete
+mass-balance residual of the simulator as an extra loss) predicts <b>pressure and water saturation</b> at every report
+time; the states at each producer are then indexed and passed to the <b>Peaceman well model</b>, learned either by a
+<b>1-D FNO over time</b> or by <b>CCR</b> (cluster-classify-regress). The surrogate drives <b>history matching</b> with
+alpha-REKI or ES-MDA against noisy data from a hidden field; you can also use the <b>mixed-precision simulator itself</b>
+as the forward model and compare the cost. The simulator then checks the matched model.</p>
 <div class="demo" id="demo-workflow">
   <div class="pipeline six">
-    <div class="stage" data-step="1"><small>1</small><b>Geology</b><span>prior permeability realisations</span></div>
-    <div class="stage" data-step="2"><small>2</small><b>Simulate</b><span>mixed-precision FGMRES-CPR simulator</span></div>
-    <div class="stage" data-step="3"><small>3</small><b>Train</b><span>CCR surrogate: cluster, classify, regress</span></div>
-    <div class="stage" data-step="4"><small>4</small><b>Validate</b><span>accuracy and speed-up on unseen runs</span></div>
-    <div class="stage" data-step="5"><small>5</small><b>History match</b><span>alpha-REKI or ES-MDA with the surrogate</span></div>
+    <div class="stage" data-step="1"><small>1</small><b>Prior</b><span>Gaussian ln K, six basis functions</span></div>
+    <div class="stage" data-step="2"><small>2</small><b>Simulate</b><span>hidden truth and validation runs</span></div>
+    <div class="stage" data-step="3"><small>3</small><b>Surrogate</b><span>FNO / PINO states, 1-D FNO / CCR wells</span></div>
+    <div class="stage" data-step="4"><small>4</small><b>Validate</b><span>against the simulator, with speed-up</span></div>
+    <div class="stage" data-step="5"><small>5</small><b>History match</b><span>alpha-REKI or ES-MDA</span></div>
     <div class="stage" data-step="6"><small>6</small><b>Verify</b><span>simulator on the matched model</span></div>
   </div>
   <div class="progress"><div class="prog"></div></div>
   <div class="demo-grid" style="margin-top:14px">
     <div>
       <canvas class="maps" width="560" height="300" aria-label="Permeability fields"></canvas>
-      <canvas class="loss" width="560" height="190" aria-label="CCR elbow" style="margin-top:12px"></canvas>
+      <canvas class="loss" width="560" height="230" aria-label="Surrogate against simulator" style="margin-top:12px"></canvas>
       <canvas class="alpha" width="560" height="210" aria-label="alpha against iteration" style="margin-top:12px"></canvas>
     </div>
     <div>
@@ -57,24 +59,27 @@ from a hidden field; and the simulator is run on the matched model to verify it.
     </div>
   </div>
   <div class="controls">
-    <label>Training simulations <span class="v" data-for="runs"></span><input type="range" name="runs" min="50" max="250" step="10" value="120"></label>
+    <label>Forward model <select name="forward"><option value="sur">surrogate (fast)</option><option value="sim">the simulator itself (slow)</option></select></label>
+    <label>States model <select name="states"><option value="fno">FNO</option><option value="pino">PINO (FNO + physics loss)</option></select></label>
+    <label>Peaceman well model <select name="wells"><option value="fno1">1-D FNO</option><option value="ccr">CCR</option></select></label>
     <label>History matching <select name="method"><option value="areki">alpha-REKI (adaptive alpha)</option><option value="esmda">ES-MDA</option></select></label>
-    <label>Ensemble size <span class="v" data-for="ne"></span><input type="range" name="ne" min="50" max="400" step="50" value="100"></label>
+    <label>Ensemble size <span class="v" data-for="ne"></span><input type="range" name="ne" min="20" max="300" step="20" value="100"></label>
     <label>ES-MDA assimilations <span class="v" data-for="na"></span><input type="range" name="na" min="1" max="8" step="1" value="4"></label>
-    <label>Localisation radius, cells (0 = off) <span class="v" data-for="loc"></span><input type="range" name="loc" min="0" max="24" step="2" value="16"></label>
-    <label>Inflation beta (1 = off) <span class="v" data-for="infl"></span><input type="range" name="infl" min="1" max="1.5" step="0.05" value="1.1"></label>
-    <label>Surrogate refinement rounds <span class="v" data-for="refine"></span><input type="range" name="refine" min="0" max="3" step="1" value="1"></label>
+    <label>Localisation radius, cells (0 = off) <span class="v" data-for="loc"></span><input type="range" name="loc" min="0" max="24" step="2" value="0"></label>
+    <label>Inflation beta (1 = off) <span class="v" data-for="infl"></span><input type="range" name="infl" min="1" max="1.5" step="0.05" value="1"></label>
     <label>Observation noise <span class="v" data-for="noise"></span><input type="range" name="noise" min="0.01" max="0.1" step="0.01" value="0.03"></label>
   </div>
   <div class="dbtns"><button class="run">Run the workflow</button><button class="truth ghost">New hidden field and rerun</button></div>
-  <p class="dnote">16 x 16 cells, two-phase, six geological parameters, a five-spot (injector in the centre, a producer
-  in each corner), 20 report times of the water cut of every producer, the field oil rate and the injector pressure. The surrogate is CCR (cluster-classify-regress) trained on the runs as they finish; localisation tapers the cross-covariance on the grid with a Gaspari-Cohn function of the distance to the well
-  of each datum and projects the update back onto the six basis functions (it regularises the field, at the price of a
-  slower and slightly looser data match; set the radius to 0 to switch it off); inflation rescales the ensemble about its
-  mean when its spread falls below half the prior spread; after the first match, each refinement round runs the simulator on 24 posterior members, adds them to the training set,
-  retrains CCR and matches again, so the surrogate is accurate where the posterior lives; every simulation, the training,
-  the timing and the inversion are computed live on this page, in JavaScript on your CPU (no GPU, no server), so the
-  run takes about a minute.</p>
+  <p class="dnote">16 x 16 cells, two-phase, six Gaussian geological parameters, a five-spot (injector in the centre, a
+  producer in each corner), 20 report times of the water cut of every producer, the field oil rate and the injector
+  pressure. The FNO, the PINO and the 1-D FNO were trained offline on 900 runs of the same simulator; their inference
+  runs on this page, and CCR is trained here on the well-cell states of 250 of those runs. With the simulator as the
+  forward model every ensemble member is a full simulation, so the ensemble is capped at 40. Localisation tapers the
+  cross-covariance on the grid with a Gaspari-Cohn function of the distance to the well of each datum and projects the
+  update back onto the six basis functions; with six global parameters and a Gaussian prior the plain update is already
+  well posed, so it is off by default. Inflation (off by default) rescales the ensemble about its mean when its spread
+  falls below half the prior spread; for this Gaussian problem the shrinking spread is the information the data add,
+  so it is a safeguard rather than a necessity. Everything runs in JavaScript on your CPU.</p>
 </div></div></section><section class="wsec" id="game"><div class="wrap"><span class="num">04 · The inverse problem, as a game</span><h2>Find the hidden channel</h2><hr class="rule">
 <p>The inverse problem of the paper as a game. A sand channel is hidden under an inverted nine-spot (one injector in the
 centre, eight producers at the corners and edge midpoints), and the <b>simulator</b> reports what the producers saw. Three contestants try to find
@@ -172,14 +177,15 @@ document.querySelectorAll('.eq-render').forEach(function (el) {
   try { katex.render(el.getAttribute('data-eq'), el, {throwOnError: false, displayMode: true}); } catch (e) {}
 });
 </script>
-<script src="../assets/js/lightbox.js?v=20261004222027"></script>
-<script src="../assets/js/demos/nvrs_engine.js?v=20261004222027"></script>
-<script src="../assets/js/demos/plots.js?v=20261004222027"></script>
-<script src="../assets/js/demos/ccr.js?v=20261004222027"></script>
-<script src="../assets/js/demos/workflow.js?v=20261004222027"></script>
-<script src="../assets/js/demos/geology.js?v=20261004222027"></script>
-<script src="../assets/js/demos/inverse.js?v=20261004222027"></script>
-<script src="../assets/js/demos/waterflood.js?v=20261004222027"></script>
+<script src="../assets/js/lightbox.js?v=20261004233133"></script>
+<script src="../assets/js/demos/nvrs_engine.js?v=20261004233133"></script>
+<script src="../assets/js/demos/plots.js?v=20261004233133"></script>
+<script src="../assets/js/demos/ccr.js?v=20261004233133"></script>
+<script src="../assets/js/demos/fno.js?v=20261004233133"></script>
+<script src="../assets/js/demos/workflow.js?v=20261004233133"></script>
+<script src="../assets/js/demos/geology.js?v=20261004233133"></script>
+<script src="../assets/js/demos/inverse.js?v=20261004233133"></script>
+<script src="../assets/js/demos/waterflood.js?v=20261004233133"></script>
 
 </body>
 </html>
