@@ -14,6 +14,10 @@
              autoencoder (VCAE) trained on channel images.
    Inversion alpha-REKI (1/alpha from the mean and variance of the data
              misfit, stopped when sum 1/alpha = 1) or ES-MDA, on the DCT coefficients or the VCAE latent.
+             Options: diagonal C_d set by the user; covariance localisation
+             (Gaspari-Cohn taper on C_md by distance from each cell to the well
+             of each datum; the update is then made on the grid and mapped back
+             by DCT projection or by the VCAE encoder); multiplicative inflation.
    The observed data and every verification come from the in-browser
    simulator (nvrs_engine.js). The two FNOs and the VCAE were trained offline
    on 600 runs of that simulator and 4,000 channel images; only their weights
@@ -135,6 +139,20 @@
     }
     return conv1(conv1(h, F.p1, gelu), F.p2);
   }
+  function vcaeEncode(prob) {               // facies probability (256) -> latent mean (8)
+    const V = NET.v;
+    const conv = (x, C, S, Wb, CO) => { const [W, b] = Wb, S2 = S / 2, y = new Float64Array(CO * S2 * S2);
+      for (let o = 0; o < CO; o++) for (let j = 0; j < S2; j++) for (let i = 0; i < S2; i++) {
+        let s = b[o];
+        for (let c = 0; c < C; c++) for (let kj = 0; kj < 3; kj++) { const jj = 2 * j + kj - 1; if (jj < 0 || jj >= S) continue;
+          for (let ki = 0; ki < 3; ki++) { const ii = 2 * i + ki - 1; if (ii < 0 || ii >= S) continue;
+            s += W[((o * C + c) * 3 + kj) * 3 + ki] * x[(c * S + jj) * S + ii]; } }
+        y[(o * S2 + j) * S2 + i] = Math.max(0, s);
+      } return y; };
+    const h = conv(conv(prob, 1, 16, V.e1, 16), 16, 8, V.e2, 32), [W, b] = V.mu, z = new Float64Array(8);
+    for (let o = 0; o < 8; o++) { let t = b[o]; for (let i = 0; i < 512; i++) t += W[o * 512 + i] * h[i]; z[o] = t; }
+    return z;
+  }
   function vcaeDecode(z) {                  // z (8) -> facies probability (256)
     const V = NET.v, [W0, b0] = V.d0, h = new Float64Array(512);
     for (let o = 0; o < 512; o++) { let s = b0[o]; for (let i = 0; i < 8; i++) s += W0[o * 8 + i] * z[i]; h[o] = Math.max(0, s); }
@@ -169,9 +187,11 @@
     const [meta, bin, cmeta, cbin] = await Promise.all([
       grab(DATA + "inverse_models.json", "json"), grab(DATA + "inverse_models.bin"),
       grab(DATA + "ccr_train.json", "json"), grab(DATA + "ccr_train.bin")]);
+    const [vmeta, vbin] = await Promise.all([grab(DATA + "vcae.json", "json"), grab(DATA + "vcae.bin")]);
     const all = new Float32Array(bin), get = k => { const [o, len] = meta.index[k]; return all.subarray(o, o + len); };
+    const vall = new Float32Array(vbin), vget = k => { const [o, len] = vmeta.index[k]; return vall.subarray(o, o + len); };
     NET = { meta, s: fnoNet(get, "s.", 1, 2 * NR, 16, 6, 3), w: fnoNet(get, "w.", 3, 2, 12, 4, 2),
-            v: { d0: [get("v.d0.weight"), get("v.d0.bias")], d1: [get("v.d1.weight"), get("v.d1.bias")], d2: [get("v.d2.weight"), get("v.d2.bias")] },
+            v: Object.fromEntries(["e1", "e2", "mu", "d0", "d1", "d2"].map(k => [k, [vget("v." + k + ".weight"), vget("v." + k + ".bias")]])), vmeta,
             ccr: { meta: cmeta, X: new Float32Array(cbin) } };
     return NET;
   }
@@ -326,8 +346,8 @@
     }
     c.strokeStyle = "rgba(255,255,255,.15)"; c.strokeRect(x + 0.5, y + 0.5, s - 1, s - 1);
   }
-  const BOARD = [["hidden reservoir", "truth"], ["your guess (paint me)", "guess"], ["DCT prior: posterior mean", "dct"], ["VCAE prior: posterior mean", "vcae"]];
-  function boardLayout() { const W = CV.board.width, gap = 16, s = Math.min((W - gap * 5) / 4, CV.board.height - 40); return { gap, s, x: i => gap + i * (s + gap), y: 30 }; }
+  const BOARD = [["hidden reservoir", "truth"], ["your guess (paint me)", "guess"], ["grid cells, no prior basis", "grid"], ["DCT prior: posterior mean", "dct"], ["VCAE prior: posterior mean", "vcae"]];
+  function boardLayout() { const W = CV.board.width, gap = 16, k = BOARD.length, s = Math.min((W - gap * (k + 1)) / k, CV.board.height - 40); return { gap, s, x: i => gap + i * (s + gap), y: 30 }; }
   function drawBoard() {
     const c = CX.board, L = boardLayout(); c.fillStyle = "#07070a"; c.fillRect(0, 0, CV.board.width, CV.board.height);
     BOARD.forEach(([title, key], i) => {
@@ -417,7 +437,7 @@
     }
   }
   function score() {
-    const rows = [["You", "guess"], ["alpha-REKI / ES-MDA + DCT prior", "dct"], ["alpha-REKI / ES-MDA + VCAE prior", "vcae"]];
+    const rows = [["You", "guess"], ["alpha-REKI / ES-MDA on the grid cells (no exotic prior)", "grid"], ["alpha-REKI / ES-MDA + DCT prior", "dct"], ["alpha-REKI / ES-MDA + VCAE prior", "vcae"]];
     const fm = f => { if ((P_.play === "on" && !board.revealed) || !f) return "?"; let s = 0; for (let k = 0; k < NC; k++) if ((f[k] > 0) === (truth.lnK[k] > 0)) s++; return (100 * s / NC).toFixed(0) + " %"; };
     $(".score").innerHTML = "<table><tr><th>contestant</th><th>data misfit (simulator, in noise units)</th><th>sand/shale cells right</th><th>forward runs used</th></tr>" +
       rows.map(([lab, k]) => { const r = board.results[k]; const name = k === "guess" ? lab : lab.replace("alpha-REKI / ES-MDA", r ? r.method : "alpha-REKI / ES-MDA");
@@ -431,7 +451,9 @@
     const sim = simulate(lnK);
     if (!sim) { caseNo++; return newCase(); }
     const r = rng(seed + 3);
-    sig = sim.d.map((v, j) => (j % DW === 2 * NW ? 0.05 * Math.abs(v) + 0.02 : 0.1 * Math.abs(v) + 0.01));
+    // C_d diagonal: sigma = (relative noise) x |d| + floor, separately for rates and injector pressure
+    const rq = (P_.noiseq || 10) / 100, rp = (P_.noisep || 5) / 100;
+    sig = sim.d.map((v, j) => (j % DW === 2 * NW ? rp * Math.abs(v) + 0.02 : rq * Math.abs(v) + 0.01));
     dobs = sim.d.map((v, j) => v + sig[j] * gauss(r));
     truth = { lnK, d: sim.d, seed };
     board.results = {}; board.revealed = false;
@@ -439,6 +461,20 @@
     drawBoard(); score(); drawData([{ y: sim.d, col: "#ff4d4d", w: 2 }, { y: dobs, dots: true }], "true model (red line) and the noisy observations from it (red dots)");
     drawEvo([]);
     drawEnsemble([], "ensemble members appear here"); drawSide(null);
+    log("Case #" + caseNo + ": observation noise sigma_d = " + (P_.noiseq || 10) + " % of each rate + 0.01, " + (P_.noisep || 5) +
+        " % of the injector pressure + 0.02; C_d diagonal; " + ND + " observations.");
+  }
+  // Gaspari-Cohn taper, zero beyond the radius L (cells)
+  function gc(d, L) {
+    const r = 2 * d / L;
+    if (r >= 2) return 0;
+    if (r <= 1) return (((-0.25 * r + 0.5) * r + 0.625) * r - 5 / 3) * r * r + 1;
+    return ((((r / 12 - 0.5) * r + 0.625) * r + 5 / 3) * r - 5) * r + 4 - 2 / (3 * r);
+  }
+  function taper(L) {                        // rho[k][p]: cell k against datum p, at the well that measured it
+    const wellOf = p => { const w = p % DW; return w < NW ? PRODS[w] : w < 2 * NW ? PRODS[w - NW] : INJ; };
+    return Array.from({ length: NC }, (_, k) => Float64Array.from({ length: ND }, (_, p) => {
+      const q = wellOf(p); return gc(Math.hypot((k % n) - (q % n), ((k / n) | 0) - ((q / n) | 0)), L); }));
   }
   function misfit(d) { let s = 0; for (let j = 0; j < ND; j++) s += ((d[j] - dobs[j]) / sig[j]) ** 2; return Math.sqrt(s / ND); }
 
@@ -456,20 +492,33 @@
             " against " + CCR.r2single.toFixed(3) + " for one global polynomial.");
         stage(3, "done"); await tick(600);
       }
-      const dim = prior === "vcae" ? 8 : 36;
-      const toField = u => prior === "vcae" ? vcaeDecode(u).map(v => G.SHALE + (G.SAND - G.SHALE) * v) : G.dctField(u.map((v, i) => v * G.PSTD[i]));
+      // grid: the 256 cell values of ln K are the parameters (no reduced basis, no learned prior)
+      const dim = prior === "vcae" ? 8 : prior === "grid" ? NC : 36;
+      const toField = u => prior === "vcae" ? vcaeDecode(u).map(v => G.SHALE + (G.SAND - G.SHALE) * v) : prior === "grid" ? Float64Array.from(u) : G.dctField(u.map((v, i) => v * G.PSTD[i]));
       const fwd = u => surrogate(toField(u), well);
-      stage(4); log("4. " + (method === "areki" ? "alpha-REKI" : "ES-MDA") + " with the " + (prior === "vcae" ? "VCAE prior (8 latent variables)" : "DCT prior (36 coefficients)") +
-                    ", forward model FNO (states) + " + (well === "ccr" ? "CCR" : "FNO") + " (wells), " + Ne + " members.");
-      const re = rng(caseNo * 1000 + (prior === "vcae" ? 7 : 3));
-      let ens = Array.from({ length: Ne }, () => Array.from({ length: dim }, () => gauss(re)));
+      // back from a grid field to the parameters: DCT projection, or the VCAE encoder
+      const fromField = f => prior === "grid" ? Array.from(f) : prior === "vcae"
+        ? Array.from(vcaeEncode(f.map(v => Math.min(1, Math.max(0, (v - G.SHALE) / (G.SAND - G.SHALE))))))
+        : G.project(f).map((c, i) => (G.PSTD[i] > 0 ? c / G.PSTD[i] : 0));
+      // localisation needs parameters with a position: the grid cells, or the DCT field; the 8 VCAE
+      // latent variables are global, so the VCAE is updated in its latent space without a taper
+      const Lr = prior === "vcae" ? 0 : P_.loc | 0, beta = P_.infl || 1, RHO = Lr > 0 ? taper(Lr) : null;
+      const spread = F => { const m = meanOf(F); let s = 0; for (let k = 0; k < NC; k++) s += Math.sqrt(F.reduce((a, f) => a + (f[k] - m[k]) ** 2, 0) / F.length); return s / NC; };
+      stage(4); log("4. " + (method === "areki" ? "alpha-REKI" : "ES-MDA") + " with the " + (prior === "vcae" ? "VCAE prior (8 latent variables)" : prior === "grid" ? "grid-cell parameters (256 values of ln K, Gaussian prior ensemble, no reduced basis)" : "DCT prior (36 coefficients)") +
+                    ", forward model FNO (states) + " + (well === "ccr" ? "CCR" : "FNO") + " (wells), " + Ne + " members, " +
+                    (prior === "vcae" ? "no localisation (the latent variables are global)" : Lr > 0 ? "localisation radius " + Lr + " cells" + (prior === "grid" ? "" : " (update on the grid, projected back onto the DCT basis)") : "no localisation") +
+                    (beta > 1 ? ", inflation " + beta.toFixed(2) + " whenever the spread falls below half the prior spread." : ", no inflation."));
+      const re = rng(caseNo * 1000 + (prior === "vcae" ? 7 : prior === "grid" ? 5 : 3));
+      let ens = prior === "grid"
+        ? Array.from({ length: Ne }, (_, j) => Array.from(G.dctField(G.dctPrior(caseNo * 7919 + j))))   // Gaussian fields, then free cell values
+        : Array.from({ length: Ne }, () => Array.from({ length: dim }, () => gauss(re)));
       const meanOf = A => A[0].map((_, j) => A.reduce((s, a) => s + a[j], 0) / A.length);
       let runs = 0, D = null, priorBand = null; const evo = [];
       const evalEns = async () => { D = []; for (let j = 0; j < Ne; j++) { D.push(fwd(ens[j])); runs++; if (j % 10 === 9) await tick(); } };
       const show = (it, extra) => {
         const F = ens.map(toField), mean = meanOf(F), std = mean.map((m, k) => Math.sqrt(F.reduce((s, f) => s + (f[k] - m) ** 2, 0) / F.length));
         board.results[prior] = Object.assign(board.results[prior] || {}, { mean, std, runs, method: method === "areki" ? "alpha-REKI" : "ES-MDA" });
-        drawBoard(); drawEnsemble(F, (prior === "vcae" ? "VCAE" : "DCT") + " ensemble, " + (it ? "iteration " + it : "prior") + extra);
+        drawBoard(); drawEnsemble(F, (prior === "vcae" ? "VCAE" : prior === "grid" ? "Grid-cell" : "DCT") + " ensemble, " + (it ? "iteration " + it : "prior") + extra);
         const q = j => { const v = D.map(d => d[j]).sort((a, b) => a - b); return [v[Math.floor(0.1 * (Ne - 1))], v[Math.ceil(0.9 * (Ne - 1))]]; };
         const lo = new Float64Array(ND), hi = new Float64Array(ND), md = meanOf(D);
         for (let j = 0; j < ND; j++) [lo[j], hi[j]] = q(j);
@@ -482,6 +531,8 @@
         score();
       };
       await evalEns(); show(0, "");
+      const spread0 = spread(ens.map(toField)), ens0 = ens.map(u => u.slice());
+      log("&nbsp;&nbsp; prior: spread of ln K (ensemble std, mean over cells) " + spread0.toFixed(3));
       const phis = () => D.map(d => d.reduce((a, v, j) => a + 0.5 * ((v - dobs[j]) / sig[j]) ** 2, 0));
       const phi = () => phis().reduce((a, b) => a + b, 0) / Ne;
       let sumInv = 0, aPrev = Infinity, it = 0; const alphas = [];
@@ -503,22 +554,47 @@
         const L = Cdd;
         for (let i = 0; i < ND; i++) { for (let j = 0; j <= i; j++) { let s = L[i][j]; for (let k = 0; k < j; k++) s -= L[i][k] * L[j][k]; L[i][j] = i === j ? Math.sqrt(Math.max(s, 1e-12)) : s / L[j][j]; } }
         const solve = v => { const y = Float64Array.from(v); for (let i = 0; i < ND; i++) { for (let k = 0; k < i; k++) y[i] -= L[i][k] * y[k]; y[i] /= L[i][i]; } for (let i = ND - 1; i >= 0; i--) { for (let k = i + 1; k < ND; k++) y[i] -= L[k][i] * y[k]; y[i] /= L[i][i]; } return y; };
-        ens = ens.map((u, j) => { const w = solve(dobs.map((v, p) => v + Math.sqrt(alpha) * sig[p] * gauss(re) - D[j][p])); return u.map((v, q) => v + Cud[q].reduce((s, c, p) => s + c * w[p], 0)); });
+        if (RHO) {
+          // localised update on the grid: K = (rho o C_fd) (C_dd + alpha C_d)^-1
+          const F = ens.map(toField), fm = meanOf(F), Cfd = Array.from({ length: NC }, () => new Float64Array(ND));
+          for (let j = 0; j < Ne; j++) for (let k = 0; k < NC; k++) { const df = (F[j][k] - fm[k]) / (Ne - 1); if (df) for (let p = 0; p < ND; p++) Cfd[k][p] += df * (D[j][p] - dm[p]); }
+          for (let k = 0; k < NC; k++) for (let p = 0; p < ND; p++) Cfd[k][p] *= RHO[k][p];
+          ens = F.map((f, j) => { const w = solve(dobs.map((v, p) => v + Math.sqrt(alpha) * sig[p] * gauss(re) - D[j][p]));
+            return fromField(f.map((v, k) => v + Cfd[k].reduce((s, c, p) => s + c * w[p], 0))); });
+        } else {
+          ens = ens.map((u, j) => { const w = solve(dobs.map((v, p) => v + Math.sqrt(alpha) * sig[p] * gauss(re) - D[j][p])); return u.map((v, q) => v + Cud[q].reduce((s, c, p) => s + c * w[p], 0)); });
+        }
+        let inflated = false;
+        if (beta > 1 && spread(ens.map(toField)) < 0.5 * spread0) {    // inflation, only against collapse
+          const m = meanOf(ens); ens = ens.map(u => u.map((v, q) => m[q] + beta * (v - m[q]))); inflated = true;
+        }
         sumInv += 1 / alpha; aPrev = alpha; it++; alphas.push(alpha);
         await evalEns(); show(it, ", alpha " + alpha.toFixed(1)); drawSide({ alphas });
-        log("&nbsp;&nbsp; iteration " + it + ": alpha = " + alpha.toFixed(2) + ", sum 1/alpha = " + Math.min(1, sumInv).toFixed(3) + ", mean data misfit " + Math.sqrt(2 * phi() / ND).toFixed(2) + " noise units");
+        log("&nbsp;&nbsp; iteration " + it + ": alpha = " + alpha.toFixed(2) + ", sum 1/alpha = " + Math.min(1, sumInv).toFixed(3) + ", mean data misfit " + Math.sqrt(2 * phi() / ND).toFixed(2) + " noise units, spread of ln K " + spread(ens.map(toField)).toFixed(3) + (inflated ? " (inflated)" : ""));
         $(".prog").style.width = (100 * (method === "areki" ? Math.min(1, sumInv) : it / Na)).toFixed(0) + "%";
         await tick(450);
         if (method === "areki" && sumInv >= 1 - 1e-9) break;
       }
       stage(4, "done");
       // verify with the simulator on the posterior mean field
-      stage(5); log("5. Verifying: the simulator run on the posterior-mean field.");
+      stage(5); log("5. Verifying with the simulator: the posterior mean, 16 posterior members and the same 16 members of the starting (prior) ensemble.");
       await tick();
-      const mean = board.results[prior].mean, ver = simulate(mean);
+      const mean = board.results[prior].mean, ver = simulate(mean), post = [], pri = [];
+      for (let j = 0; j < Ne && post.length < 16; j += Math.max(1, Math.floor(Ne / 16))) {
+        const r = simulate(toField(ens[j])), r0 = simulate(toField(ens0[j]));
+        if (r) post.push(r.d); if (r0) pri.push(r0.d); await tick();
+      }
+      const pb = [new Float64Array(ND), new Float64Array(ND)];
+      for (let j = 0; j < ND; j++) { const v = pri.map(d => d[j]).sort((a, b) => a - b); pb[0][j] = v[Math.floor(0.1 * (v.length - 1))]; pb[1][j] = v[Math.ceil(0.9 * (v.length - 1))]; }
       board.results[prior].mis = ver ? misfit(ver.d) : NaN; board.results[prior].runs = runs;
-      drawData([{ band: priorBand, col: "rgba(160,160,170,.18)" }, { y: ver.d, col: "#4fa0ff", w: 2.4 }, { y: truth.d, col: "#ff4d4d", w: 2 }, { y: dobs, dots: true }],
-               "simulator on the posterior-mean field (blue) against the true model (red); prior range in grey");
+      const plo = new Float64Array(ND), phi_ = new Float64Array(ND);
+      for (let j = 0; j < ND; j++) { const v = post.map(d => d[j]).sort((a, b) => a - b); plo[j] = v[Math.floor(0.1 * (v.length - 1))]; phi_[j] = v[Math.ceil(0.9 * (v.length - 1))]; }
+      let inside = 0; for (let j = 0; j < ND; j++) if (truth.d[j] >= plo[j] - 1e-9 && truth.d[j] <= phi_[j] + 1e-9) inside++;
+      drawData([{ band: pb, col: "rgba(160,160,170,.16)" }, { members: pri, col: "rgba(170,170,180,.30)" },
+                { band: [plo, phi_], col: "rgba(79,160,255,.32)" }, { members: post, col: "rgba(79,160,255,.40)" },
+                { y: ver.d, col: "#2f7dff", w: 2.6 }, { y: truth.d, col: "#ff4d4d", w: 2 }, { y: dobs, dots: true }],
+               "simulator: prior members (grey), posterior members and P10 to P90 band (blue), posterior mean (thick blue), true model (red)");
+      log("&nbsp;&nbsp; the posterior band from the simulator contains the true model at " + (100 * inside / ND).toFixed(0) + " % of the data points.");
       log("&nbsp;&nbsp; data misfit of the matched model, simulated: " + board.results[prior].mis.toFixed(2) + " noise units, " + runs + " surrogate evaluations.");
       stage(5, "done"); score(); drawBoard();
     } catch (e) { log("Stopped: " + (e && e.message ? e.message : e) + ". Please try again."); }
@@ -557,10 +633,11 @@
   $(".newcase").addEventListener("click", () => { if (busy) return; caseNo++; $(".wlog").innerHTML = ""; stage(0); newCase(); });
   $(".run-dct").addEventListener("click", () => invert("dct"));
   $(".run-vcae").addEventListener("click", () => invert("vcae"));
-  root.querySelectorAll("input,select").forEach(el => el.addEventListener("input", () => { readParams(); if (el.name === "play") { drawBoard(); score(); } }));
+  $(".run-grid").addEventListener("click", () => invert("grid"));
+  root.querySelectorAll("input,select").forEach(el => el.addEventListener("input", () => { readParams(); if (el.name === "play") { drawBoard(); score(); } if ((el.name === "noiseq" || el.name === "noisep") && !busy) newCase(); }));
   readParams();
   // the case is built on first view, so the page loads without a simulator run
   const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); newCase(); loadNets().catch(() => log("Could not load the trained networks.")); } });
   io.observe(root);
-  window.__INV = { loadNets, states, wells, vcaeDecode, fnoRun, simulate, trainCCR, get NET() { return NET; } };
+  window.__INV = { vcaeEncode, loadNets, states, wells, vcaeDecode, fnoRun, simulate, trainCCR, get NET() { return NET; } };
 })();
