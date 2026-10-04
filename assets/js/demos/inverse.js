@@ -232,90 +232,21 @@
     return { d, S: Float64Array.from(M.S) };
   }
 
-  // ------------------------------------------------------------ CCR well model
-  function kmeans(Z, K, r) {
-    const N = Z.length, D = Z[0].length, C = [Z[Math.floor(r() * N)].slice()];
-    while (C.length < K) {                   // k-means++
-      const d2 = Z.map(z => Math.min(...C.map(c => c.reduce((s, v, j) => s + (v - z[j]) ** 2, 0))));
-      let u = r() * d2.reduce((a, b) => a + b, 0), i = 0; while (u > d2[i] && i < N - 1) u -= d2[i++];
-      C.push(Z[i].slice());
-    }
-    const lab = new Int32Array(N); let sse = 0;
-    for (let it = 0; it < 25; it++) {
-      sse = 0;
-      for (let i = 0; i < N; i++) { let b = 0, bd = Infinity; for (let k = 0; k < K; k++) { let s = 0; for (let j = 0; j < D; j++) s += (C[k][j] - Z[i][j]) ** 2; if (s < bd) { bd = s; b = k; } } lab[i] = b; sse += bd; }
-      const S = Array.from({ length: K }, () => new Float64Array(D)), cnt = new Float64Array(K);
-      for (let i = 0; i < N; i++) { cnt[lab[i]]++; for (let j = 0; j < D; j++) S[lab[i]][j] += Z[i][j]; }
-      for (let k = 0; k < K; k++) if (cnt[k]) for (let j = 0; j < D; j++) C[k][j] = S[k][j] / cnt[k];
-    }
-    return { lab, sse };
-  }
-  function tree(X, y, K, idx, depth, r) {    // CART with Gini, sqrt(D) features per split
-    const cnt = new Float64Array(K); for (const i of idx) cnt[y[i]]++;
-    const maj = cnt.indexOf(Math.max(...cnt));
-    if (depth === 0 || idx.length < 10 || Math.max(...cnt) === idx.length) return { leaf: maj };
-    const D = X[0].length, nf = Math.max(1, Math.round(Math.sqrt(D)));
-    let best = null;
-    for (let f = 0; f < nf; f++) {
-      const j = Math.floor(r() * D);
-      for (let c = 0; c < 8; c++) {
-        const thr = X[idx[Math.floor(r() * idx.length)]][j], L = new Float64Array(K), R = new Float64Array(K); let nl = 0;
-        for (const i of idx) { if (X[i][j] <= thr) { L[y[i]]++; nl++; } else R[y[i]]++; }
-        const nr = idx.length - nl; if (!nl || !nr) continue;
-        const gini = (A, m) => 1 - A.reduce((s, v) => s + (v / m) ** 2, 0), sc = nl * gini(L, nl) + nr * gini(R, nr);
-        if (!best || sc < best.sc) best = { sc, j, thr };
-      }
-    }
-    if (!best) return { leaf: maj };
-    const li = idx.filter(i => X[i][best.j] <= best.thr), ri = idx.filter(i => X[i][best.j] > best.thr);
-    return { j: best.j, thr: best.thr, l: tree(X, y, K, li, depth - 1, r), r: tree(X, y, K, ri, depth - 1, r) };
-  }
-  function treePredict(t, x) { while (t.leaf === undefined) t = x[t.j] <= t.thr ? t.l : t.r; return t.leaf; }
-  const poly = x => { const f = [1, ...x]; for (let a = 0; a < x.length; a++) for (let b = a; b < x.length; b++) f.push(x[a] * x[b]); return f; };
-  function ridge(Fs, Ys, lam) {
-    const p = Fs[0].length, q = Ys[0].length, A = Array.from({ length: p }, () => new Float64Array(p)), B = Array.from({ length: p }, () => new Float64Array(q));
-    Fs.forEach((f, s) => { for (let a = 0; a < p; a++) { for (let b = a; b < p; b++) A[a][b] += f[a] * f[b]; for (let c = 0; c < q; c++) B[a][c] += f[a] * Ys[s][c]; } });
-    for (let a = 0; a < p; a++) { for (let b = 0; b < a; b++) A[a][b] = A[b][a]; A[a][a] += lam; }
-    for (let k = 0; k < p; k++) for (let a = k + 1; a < p; a++) { const f = A[a][k] / A[k][k]; for (let b = k; b < p; b++) A[a][b] -= f * A[k][b]; for (let c = 0; c < q; c++) B[a][c] -= f * B[k][c]; }
-    const W = Array.from({ length: p }, () => new Float64Array(q));
-    for (let a = p - 1; a >= 0; a--) for (let c = 0; c < q; c++) { let s = B[a][c]; for (let b = a + 1; b < p; b++) s -= A[a][b] * W[b][c]; W[a][c] = s / A[a][a]; }
-    return W;
-  }
-  const ridgePredict = (W, f) => W[0].map((_, c) => f.reduce((s, v, a) => s + v * W[a][c], 0));
+  // ------------------------------------------------------------ CCR well model (ccr.js)
   async function trainCCR() {
-    const C = NET.ccr, cols = C.meta.cols, ntr = C.meta.ntrain, nte = C.meta.ntest, A = C.X, r = rng(42);
+    const C = NET.ccr, cols = C.meta.cols, ntr = C.meta.ntrain, nte = C.meta.ntest, A = C.X;
     const row = i => Array.from(A.subarray(i * cols, i * cols + cols));
     const Xtr = [], Ytr = [], Xte = [], Yte = [];
     for (let i = 0; i < ntr; i += 2) { const v = row(i); Xtr.push(v.slice(0, 5)); Ytr.push(v.slice(5)); }
     for (let i = ntr; i < ntr + nte; i++) { const v = row(i); Xte.push(v.slice(0, 5)); Yte.push(v.slice(5)); }
-    const mu = Xtr[0].map((_, j) => Xtr.reduce((s, x) => s + x[j], 0) / Xtr.length);
-    const sd = Xtr[0].map((_, j) => Math.sqrt(Xtr.reduce((s, x) => s + (x[j] - mu[j]) ** 2, 0) / Xtr.length) || 1);
-    const ymu = [0, 1].map(j => Ytr.reduce((s, y) => s + y[j], 0) / Ytr.length), ysd = [0, 1].map(j => Math.sqrt(Ytr.reduce((s, y) => s + (y[j] - ymu[j]) ** 2, 0) / Ytr.length) || 1);
-    const nx = x => x.map((v, j) => (v - mu[j]) / sd[j]);
-    const Z = Xtr.map((x, s) => [...nx(x), ...Ytr[s].map((v, j) => 1.5 * (v - ymu[j]) / ysd[j])]);
-    // 1 cluster: elbow over K = 1..5
-    const sse = [];
-    for (let K = 1; K <= 5; K++) { sse.push(kmeans(Z, K, rng(7 + K)).sse); await tick(); }
-    let K = 2, bestCurv = -Infinity;
-    for (let k = 2; k <= 4; k++) { const curv = (sse[k - 2] - sse[k - 1]) - (sse[k - 1] - sse[k]); if (curv > bestCurv) { bestCurv = curv; K = k; } }
-    const km = kmeans(Z, K, rng(7 + K)), lab = km.lab;
-    log("&nbsp;&nbsp; cluster: k-means on joint (inputs, rates), elbow picks K = " + K + " (SSE " + sse.map(v => v.toFixed(0)).join(", ") + ").");
-    // 2 classify: random forest on the inputs
-    const Xn = Xtr.map(nx), forest = [];
-    for (let t = 0; t < 25; t++) { const idx = Array.from({ length: Xn.length }, () => Math.floor(r() * Xn.length)); forest.push(tree(Xn, lab, K, idx, 9, r)); if (t % 5 === 4) await tick(); }
-    const classify = x => { const v = new Float64Array(K); for (const t of forest) v[treePredict(t, x)]++; return v.indexOf(Math.max(...v)); };
-    let acc = 0; Xn.forEach((x, s) => { if (classify(x) === lab[s]) acc++; });
-    // 3 regress: polynomial ridge expert per cluster
-    const experts = [];
-    for (let k = 0; k < K; k++) {
-      const F = [], Y = []; Xn.forEach((x, s) => { if (lab[s] === k) { F.push(poly(x)); Y.push(Ytr[s]); } });
-      experts.push(ridge(F, Y, 1e-2 * F.length + 1e-6));
-    }
-    const single = ridge(Xn.map(poly), Ytr, 1e-2 * Xn.length);
-    const predict = x => { const z = nx(x), f = poly(z); return ridgePredict(experts[classify(z)], f).map(v => Math.max(0, v)); };
-    const r2 = (pred) => { let ss = 0, st = 0; const m = [0, 1].map(j => Yte.reduce((s, y) => s + y[j], 0) / Yte.length);
-      Xte.forEach((x, s) => { const p = pred(x); for (let j = 0; j < 2; j++) { ss += (p[j] - Yte[s][j]) ** 2; st += (Yte[s][j] - m[j]) ** 2; } }); return 1 - ss / st; };
-    CCR = { K, predict, lab, Xtr, Ytr, acc: acc / Xn.length, r2: r2(predict), r2single: r2(x => ridgePredict(single, poly(nx(x))).map(v => Math.max(0, v))), Xte, Yte };
+    await tick();
+    const m = window.CCR.train(Xtr, Ytr, { Kmax: 5, lam: 1e-2 });
+    log("&nbsp;&nbsp; cluster: k-means on joint (inputs, rates), elbow picks K = " + m.K + " (SSE " + m.sse.map(v => v.toFixed(0)).join(", ") + ").");
+    const clip = y => y.map(v => Math.max(0, v));
+    const r2 = pred => { let ss = 0, st = 0; const mu = [0, 1].map(j => Yte.reduce((s, y) => s + y[j], 0) / Yte.length);
+      Xte.forEach((x, s) => { const p = pred(x); for (let j = 0; j < 2; j++) { ss += (p[j] - Yte[s][j]) ** 2; st += (Yte[s][j] - mu[j]) ** 2; } }); return 1 - ss / st; };
+    const predict = x => clip(m.predict(x));
+    CCR = { K: m.K, predict, lab: m.labels, Xtr, Ytr, acc: m.acc, r2: r2(predict), r2single: r2(x => clip(m.single(x))), Xte, Yte };
     return CCR;
   }
   const ccrPredict = f => CCR.predict(f);

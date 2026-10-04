@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
-<link rel="stylesheet" href="../assets/css/work.css?v=20261004210247">
+<link rel="stylesheet" href="../assets/css/work.css?v=20261004215841">
 </head>
 <body>
 <nav class="wnav">
@@ -32,14 +32,14 @@ state, a Cluster-Classify-Regress mixture of experts for the well rates, and an 
 Kalman inversion that recovers permeability, porosity and fault multipliers from production data.</p><div class="cols"><div class="card"><h3>Forward surrogate (FNO / PINO)</h3><p>A neural operator maps permeability, porosity, fault multipliers and controls to pressure and saturations at every report step, trained with data and the PDE residual.</p></div><div class="card"><h3>Well rates (CCR)</h3><p>Cluster-Classify-Regress, a mixture of experts built for discontinuous responses, maps the predicted state at the wells to oil, water and gas rates.</p></div><div class="card"><h3>Inverse problem (alpha-REKI or ES-MDA)</h3><p>Adaptive regularised ensemble Kalman inversion, or the ensemble smoother with multiple data assimilation, with covariance localisation, conditions the ensemble on the field history.</p></div><div class="card"><h3>Sequential and physics-constrained</h3><p>Autoregressive training on the model&#x27;s own predictions removes the exposure bias of teacher forcing over long rollouts.</p></div></div></div></section><section class="wsec" id="maths"><div class="wrap"><span class="num">02 · Mathematics</span><h2>What is being learned</h2><hr class="rule"><div class="eq"><div class="eq-render" data-eq="\frac{\partial}{\partial t}\Big(\phi\, b_\alpha S_\alpha\Big) - \nabla\cdot\big(b_\alpha \lambda_\alpha \mathbf{K}\,\nabla\Phi_\alpha\big) = b_\alpha q_\alpha,\qquad \alpha\in\{w,o,g\}"></div><p class="dnote" style="margin-top:8px">Black-oil mass conservation for water, oil and gas, with dissolved gas and Peaceman well terms.</p></div><div class="eq"><div class="eq-render" data-eq="\mathcal{L}(\theta)=\mathbb{E}\Big[\sum_{n}\big\|\hat x_{n+1}-x_{n+1}\big\|^2\Big]+\lambda_R\,\mathbb{E}\Big[\sum_n\big\|R(\hat x_{n+1},\hat x_n;u)\big\|^2\Big],\qquad \hat x_{n+1}=\mathcal{G}_\theta(u,\hat x_n)"></div><p class="dnote" style="margin-top:8px">Autoregressive data loss plus the discretised PDE residual R: the physics-informed neural operator objective.</p></div><div class="eq"><div class="eq-render" data-eq="u_j^{\,i+1}=u_j^{\,i}+C_{ud}\big(C_{dd}+\alpha_i C_e\big)^{-1}\big(d_{\rm obs}+\sqrt{\alpha_i}\,e_j-\mathcal{G}(u_j^{\,i})\big),\qquad \sum_i \alpha_i^{-1}=1"></div><p class="dnote" style="margin-top:8px">The ensemble Kalman update with the surrogate in place of the simulator. alpha-REKI chooses alpha_i = min(n_d / (2 Phi_i), rho alpha_(i-1)) from the mean data misfit Phi_i and stops when the sum of 1/alpha_i reaches one; ES-MDA uses alpha_i = N_a for N_a assimilations.</p></div></div></section><section class="wsec" id="workflow"><div class="wrap"><span class="num">03 · The workflow, live</span><h2>Simulate, train, validate, history-match, verify</h2><hr class="rule">
 <p>The whole workflow of the paper, end to end, in your browser. Permeability fields are drawn from a prior; each one is
 run to the end of the schedule by the <b>mixed-precision simulator</b> (Newton, FP64 FGMRES, two-stage CPR with an
-FP32 multigrid V-cycle and 2 x 2 block Jacobi); a <b>neural surrogate</b> is trained on the runs and checked against
+FP32 multigrid V-cycle and 2 x 2 block Jacobi); a <b>CCR surrogate</b> (cluster-classify-regress) is trained on the runs and checked against
 held-out simulations; the surrogate then drives <b>history matching</b> with alpha-REKI or ES-MDA against noisy data
 from a hidden field; and the simulator is run on the matched model to verify it.</p>
 <div class="demo" id="demo-workflow">
   <div class="pipeline six">
     <div class="stage" data-step="1"><small>1</small><b>Geology</b><span>prior permeability realisations</span></div>
     <div class="stage" data-step="2"><small>2</small><b>Simulate</b><span>mixed-precision FGMRES-CPR simulator</span></div>
-    <div class="stage" data-step="3"><small>3</small><b>Train</b><span>neural surrogate, Adam</span></div>
+    <div class="stage" data-step="3"><small>3</small><b>Train</b><span>CCR surrogate: cluster, classify, regress</span></div>
     <div class="stage" data-step="4"><small>4</small><b>Validate</b><span>accuracy and speed-up on unseen runs</span></div>
     <div class="stage" data-step="5"><small>5</small><b>History match</b><span>alpha-REKI or ES-MDA with the surrogate</span></div>
     <div class="stage" data-step="6"><small>6</small><b>Verify</b><span>simulator on the matched model</span></div>
@@ -48,7 +48,7 @@ from a hidden field; and the simulator is run on the matched model to verify it.
   <div class="demo-grid" style="margin-top:14px">
     <div>
       <canvas class="maps" width="560" height="300" aria-label="Permeability fields"></canvas>
-      <canvas class="loss" width="560" height="190" aria-label="Training loss" style="margin-top:12px"></canvas>
+      <canvas class="loss" width="560" height="190" aria-label="CCR elbow" style="margin-top:12px"></canvas>
     </div>
     <div>
       <canvas class="curves" width="560" height="300" aria-label="Production curves"></canvas>
@@ -56,16 +56,17 @@ from a hidden field; and the simulator is run on the matched model to verify it.
     </div>
   </div>
   <div class="controls">
-    <label>Training simulations <span class="v" data-for="runs"></span><input type="range" name="runs" min="30" max="150" step="10" value="50"></label>
-    <label>Training epochs <span class="v" data-for="epochs"></span><input type="range" name="epochs" min="200" max="2000" step="100" value="900"></label>
+    <label>Training simulations <span class="v" data-for="runs"></span><input type="range" name="runs" min="50" max="250" step="10" value="120"></label>
     <label>History matching <select name="method"><option value="areki">alpha-REKI (adaptive alpha)</option><option value="esmda">ES-MDA</option></select></label>
     <label>Ensemble size <span class="v" data-for="ne"></span><input type="range" name="ne" min="50" max="400" step="50" value="200"></label>
     <label>ES-MDA assimilations <span class="v" data-for="na"></span><input type="range" name="na" min="1" max="8" step="1" value="4"></label>
+    <label>Surrogate refinement rounds <span class="v" data-for="refine"></span><input type="range" name="refine" min="0" max="3" step="1" value="1"></label>
     <label>Observation noise <span class="v" data-for="noise"></span><input type="range" name="noise" min="0.01" max="0.1" step="0.01" value="0.03"></label>
   </div>
   <div class="dbtns"><button class="run">Run the workflow</button><button class="truth ghost">New hidden field and rerun</button></div>
-  <p class="dnote">16 x 16 cells, two-phase, six geological parameters, 20 report times of producer water cut, oil rate and
-  injector pressure. A multilayer perceptron stands in for the neural operator at this size; every simulation, the training,
+  <p class="dnote">16 x 16 cells, two-phase, six geological parameters, a five-spot (injector in the centre, a producer
+  in each corner), 20 report times of the water cut of every producer, the field oil rate and the injector pressure. The surrogate is CCR (cluster-classify-regress) trained on the runs as they finish; after the first match, each refinement round runs the simulator on 24 posterior members, adds them to the training set,
+  retrains CCR and matches again, so the surrogate is accurate where the posterior lives; every simulation, the training,
   the timing and the inversion are computed live on this page, in JavaScript on your CPU (no GPU, no server), so the
   run takes about a minute.</p>
 </div></div></section><section class="wsec" id="game"><div class="wrap"><span class="num">04 · The inverse problem, as a game</span><h2>Find the hidden channel</h2><hr class="rule">
@@ -165,12 +166,13 @@ document.querySelectorAll('.eq-render').forEach(function (el) {
   try { katex.render(el.getAttribute('data-eq'), el, {throwOnError: false, displayMode: true}); } catch (e) {}
 });
 </script>
-<script src="../assets/js/lightbox.js?v=20261004210247"></script>
-<script src="../assets/js/demos/nvrs_engine.js?v=20261004210247"></script>
-<script src="../assets/js/demos/workflow.js?v=20261004210247"></script>
-<script src="../assets/js/demos/geology.js?v=20261004210247"></script>
-<script src="../assets/js/demos/inverse.js?v=20261004210247"></script>
-<script src="../assets/js/demos/waterflood.js?v=20261004210247"></script>
+<script src="../assets/js/lightbox.js?v=20261004215841"></script>
+<script src="../assets/js/demos/nvrs_engine.js?v=20261004215841"></script>
+<script src="../assets/js/demos/ccr.js?v=20261004215841"></script>
+<script src="../assets/js/demos/workflow.js?v=20261004215841"></script>
+<script src="../assets/js/demos/geology.js?v=20261004215841"></script>
+<script src="../assets/js/demos/inverse.js?v=20261004215841"></script>
+<script src="../assets/js/demos/waterflood.js?v=20261004215841"></script>
 
 </body>
 </html>
