@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
-<link rel="stylesheet" href="../assets/css/work.css?v=20261004203842">
+<link rel="stylesheet" href="../assets/css/work.css?v=20261004210247">
 </head>
 <body>
 <nav class="wnav">
@@ -107,6 +107,7 @@ updates stay on the channel manifold. You can paint your own guess and send it t
     <label>Inflation beta (1 = off) <span class="v" data-for="infl"></span><input type="range" name="infl" min="1" max="1.5" step="0.05" value="1.1"></label>
     <label>Brush <select name="brush"><option value="sand">sand</option><option value="shale">shale</option></select></label>
     <label>Brush size <span class="v" data-for="brushsize"></span><input type="range" name="brushsize" min="1" max="3" step="1" value="2"></label>
+    <label>Show <select name="est"><option value="best">best-matching member (crisp)</option><option value="mean">posterior mean (smooth)</option><option value="facies">posterior mean, thresholded to sand/shale</option></select></label>
     <label>Play mode (hide the truth) <select name="play"><option value="off">off</option><option value="on">on</option></select></label>
   </div>
   <div class="dbtns"><button class="run-grid">Match on the grid cells (no exotic prior)</button><button class="run-dct">Match with the DCT prior</button><button class="run-vcae">Match with the VCAE prior</button>
@@ -164,12 +165,12 @@ document.querySelectorAll('.eq-render').forEach(function (el) {
   try { katex.render(el.getAttribute('data-eq'), el, {throwOnError: false, displayMode: true}); } catch (e) {}
 });
 </script>
-<script src="../assets/js/lightbox.js?v=20261004203842"></script>
-<script src="../assets/js/demos/nvrs_engine.js?v=20261004203842"></script>
-<script src="../assets/js/demos/workflow.js?v=20261004203842"></script>
-<script src="../assets/js/demos/geology.js?v=20261004203842"></script>
-<script src="../assets/js/demos/inverse.js?v=20261004203842"></script>
-<script src="../assets/js/demos/waterflood.js?v=20261004203842"></script>
+<script src="../assets/js/lightbox.js?v=20261004210247"></script>
+<script src="../assets/js/demos/nvrs_engine.js?v=20261004210247"></script>
+<script src="../assets/js/demos/workflow.js?v=20261004210247"></script>
+<script src="../assets/js/demos/geology.js?v=20261004210247"></script>
+<script src="../assets/js/demos/inverse.js?v=20261004210247"></script>
+<script src="../assets/js/demos/waterflood.js?v=20261004210247"></script>
 
 </body>
 </html>

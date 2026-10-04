@@ -335,7 +335,7 @@
       img.data.set([col[0], col[1], col[2], 255], 4 * k);
     }
     const off = document.createElement("canvas"); off.width = n; off.height = n; off.getContext("2d").putImageData(img, 0, 0);
-    c.imageSmoothingEnabled = !opt.pixel; c.drawImage(off, x, y, s, s);
+    c.imageSmoothingEnabled = false; c.drawImage(off, x, y, s, s);   // cell by cell, as the simulator sees it
     if (opt.fog) {
       c.fillStyle = "rgba(10,10,14,.86)"; c.fillRect(x, y, s, s);
       c.fillStyle = "#e8e6e3"; c.font = Math.round(s / 3) + "px Syne, sans-serif"; c.textAlign = "center"; c.fillText("?", x + s / 2, y + s * 0.62); c.textAlign = "left";
@@ -346,7 +346,7 @@
     }
     c.strokeStyle = "rgba(255,255,255,.15)"; c.strokeRect(x + 0.5, y + 0.5, s - 1, s - 1);
   }
-  const BOARD = [["hidden reservoir", "truth"], ["your guess (paint me)", "guess"], ["grid cells, no prior basis", "grid"], ["DCT prior: posterior mean", "dct"], ["VCAE prior: posterior mean", "vcae"]];
+  const BOARD = [["hidden reservoir", "truth"], ["your guess (paint me)", "guess"], ["grid cells (no exotic prior)", "grid"], ["DCT prior", "dct"], ["VCAE prior", "vcae"]];
   function boardLayout() { const W = CV.board.width, gap = 16, k = BOARD.length, s = Math.min((W - gap * (k + 1)) / k, CV.board.height - 40); return { gap, s, x: i => gap + i * (s + gap), y: 30 }; }
   function drawBoard() {
     const c = CX.board, L = boardLayout(); c.fillStyle = "#07070a"; c.fillRect(0, 0, CV.board.width, CV.board.height);
@@ -354,7 +354,7 @@
       c.fillStyle = "#e8e6e3"; c.font = "12px DM Mono, monospace"; c.fillText(title, L.x(i), 18);
       if (key === "truth") drawField(c, truth ? truth.lnK : new Float64Array(NC), L.x(i), L.y, L.s, { fog: P_.play === "on" && !board.revealed, pixel: true });
       else if (key === "guess") drawField(c, board.guess, L.x(i), L.y, L.s, { pixel: true });
-      else if (board.results[key]) drawField(c, board.results[key].mean, L.x(i), L.y, L.s);
+      else if (board.results[key]) drawField(c, pick(board.results[key].mean, board.results[key].best), L.x(i), L.y, L.s);
       else { c.fillStyle = "#101016"; c.fillRect(L.x(i), L.y, L.s, L.s); c.fillStyle = "#6b6a68"; c.fillText("not run yet", L.x(i) + 10, L.y + L.s / 2); }
     });
   }
@@ -419,11 +419,19 @@
     c.setLineDash([4, 4]); c.strokeStyle = "rgba(0,229,160,.5)"; c.beginPath(); c.moveTo(40, Y(1)); c.lineTo(W - 20, Y(1)); c.stroke(); c.setLineDash([]);
   }
   // permeability through the iterations: truth, prior mean, posterior mean at each iteration, final spread
+  // which estimate to show: the best-matching member (crisp), the posterior mean (smooth), or the mean thresholded to facies
+  function pick(mean, best) {
+    if (P_.est === "mean" || !best) return mean;
+    if (P_.est === "facies") return mean.map(v => (v > 0 ? G.SAND : G.SHALE));
+    return best;
+  }
+  const estName = () => P_.est === "mean" ? "posterior mean" : P_.est === "facies" ? "thresholded mean" : "best member";
   function drawEvo(list, std) {
+    board.evo = list; board.evoStd = std;
     const c = CX.evo, W = CV.evo.width, H = CV.evo.height; c.fillStyle = "#07070a"; c.fillRect(0, 0, W, H);
     c.fillStyle = "#e8e6e3"; c.font = "12px DM Mono, monospace";
-    c.fillText("permeability through the iterations: the truth (left), then the ensemble mean after each update, and the final spread", 10, 16);
-    const items = [{ f: truth ? truth.lnK : new Float64Array(NC), t: "truth", fog: P_.play === "on" && !board.revealed }, ...list.slice(-8)];
+    c.fillText("permeability: the truth, then the " + estName() + " after each update, then the spread", 10, 16);
+    const items = [{ f: truth ? truth.lnK : new Float64Array(NC), t: "truth", fog: P_.play === "on" && !board.revealed }, ...list.slice(-8).map(it => ({ t: it.t, f: pick(it.f, it.b) }))];
     if (std) items.push({ f: std, t: "spread (std)", std: true });
     const k = Math.max(items.length, 6), gap = 10, s = Math.min((W - gap * (k + 1)) / k, H - 46);
     items.forEach((it, i) => {
@@ -432,16 +440,17 @@
       c.fillStyle = i === 0 ? "#ff4d4d" : "#9a9997"; c.font = "11px DM Mono, monospace"; c.fillText(it.t, x, 26 + s + 14);
     });
     if (truth && list.length && !(P_.play === "on" && !board.revealed)) {
-      const last = list[list.length - 1].f; let e = 0; for (let q = 0; q < NC; q++) e += (last[q] - truth.lnK[q]) ** 2;
-      c.fillStyle = "#e8e6e3"; c.fillText("RMS error in ln K of the latest mean: " + Math.sqrt(e / NC).toFixed(2), W - 330, H - 6);
+      const last = pick(list[list.length - 1].f, list[list.length - 1].b); let e = 0; for (let q = 0; q < NC; q++) e += (last[q] - truth.lnK[q]) ** 2;
+      c.fillStyle = "#e8e6e3"; c.textAlign = "right"; c.fillText("RMS error in ln K of the " + estName() + ": " + Math.sqrt(e / NC).toFixed(2), W - 12, 16); c.textAlign = "left";
     }
   }
   function score() {
     const rows = [["You", "guess"], ["alpha-REKI / ES-MDA on the grid cells (no exotic prior)", "grid"], ["alpha-REKI / ES-MDA + DCT prior", "dct"], ["alpha-REKI / ES-MDA + VCAE prior", "vcae"]];
+    const misOf = (r, k) => !r ? NaN : k === "guess" || P_.est === "mean" ? r.mis : P_.est === "facies" ? r.misF : r.misB;
     const fm = f => { if ((P_.play === "on" && !board.revealed) || !f) return "?"; let s = 0; for (let k = 0; k < NC; k++) if ((f[k] > 0) === (truth.lnK[k] > 0)) s++; return (100 * s / NC).toFixed(0) + " %"; };
     $(".score").innerHTML = "<table><tr><th>contestant</th><th>data misfit (simulator, in noise units)</th><th>sand/shale cells right</th><th>forward runs used</th></tr>" +
       rows.map(([lab, k]) => { const r = board.results[k]; const name = k === "guess" ? lab : lab.replace("alpha-REKI / ES-MDA", r ? r.method : "alpha-REKI / ES-MDA");
-        return "<tr><td>" + name + "</td><td>" + (r && r.mis !== undefined ? r.mis.toFixed(2) : "-") + "</td><td>" + (r ? fm(r.mean) : "-") + "</td><td>" + (r ? r.runs : "-") + "</td></tr>"; }).join("") + "</table>";
+        return "<tr><td>" + name + "</td><td>" + (isFinite(misOf(r, k)) ? misOf(r, k).toFixed(2) : "-") + "</td><td>" + (r ? fm(k === "guess" ? r.mean : pick(r.mean, r.best)) : "-") + "</td><td>" + (r ? r.runs : "-") + "</td></tr>"; }).join("") + "</table>";
   }
 
   // ------------------------------------------------------------ the case
@@ -517,7 +526,10 @@
       const evalEns = async () => { D = []; for (let j = 0; j < Ne; j++) { D.push(fwd(ens[j])); runs++; if (j % 10 === 9) await tick(); } };
       const show = (it, extra) => {
         const F = ens.map(toField), mean = meanOf(F), std = mean.map((m, k) => Math.sqrt(F.reduce((s, f) => s + (f[k] - m) ** 2, 0) / F.length));
-        board.results[prior] = Object.assign(board.results[prior] || {}, { mean, std, runs, method: method === "areki" ? "alpha-REKI" : "ES-MDA" });
+        let bi = 0, bv = Infinity;                 // the member that matches the data best (surrogate)
+        D.forEach((d, j) => { let s = 0; for (let p = 0; p < ND; p++) s += ((d[p] - dobs[p]) / sig[p]) ** 2; if (s < bv) { bv = s; bi = j; } });
+        const best = F[bi];
+        board.results[prior] = Object.assign(board.results[prior] || {}, { mean, best, std, runs, method: method === "areki" ? "alpha-REKI" : "ES-MDA" });
         drawBoard(); drawEnsemble(F, (prior === "vcae" ? "VCAE" : prior === "grid" ? "Grid-cell" : "DCT") + " ensemble, " + (it ? "iteration " + it : "prior") + extra);
         const q = j => { const v = D.map(d => d[j]).sort((a, b) => a - b); return [v[Math.floor(0.1 * (Ne - 1))], v[Math.ceil(0.9 * (Ne - 1))]]; };
         const lo = new Float64Array(ND), hi = new Float64Array(ND), md = meanOf(D);
@@ -527,7 +539,7 @@
                   { members: D.slice(0, 30), col: "rgba(79,160,255,.35)" }, { y: md, col: "#4fa0ff", w: 2 },
                   { y: truth.d, col: "#ff4d4d", w: 2 }, { y: dobs, dots: true }],
                  "ensemble (blue: members, P10 to P90 band, mean), prior band (grey), true model (red), " + (it ? "iteration " + it : "prior"));
-        evo.push({ f: mean, t: it ? "iteration " + it : "prior mean" }); drawEvo(evo, std);
+        evo.push({ f: mean, b: best, t: it ? "iteration " + it : "prior" }); drawEvo(evo, std);
         score();
       };
       await evalEns(); show(0, "");
@@ -587,6 +599,9 @@
       const pb = [new Float64Array(ND), new Float64Array(ND)];
       for (let j = 0; j < ND; j++) { const v = pri.map(d => d[j]).sort((a, b) => a - b); pb[0][j] = v[Math.floor(0.1 * (v.length - 1))]; pb[1][j] = v[Math.ceil(0.9 * (v.length - 1))]; }
       board.results[prior].mis = ver ? misfit(ver.d) : NaN; board.results[prior].runs = runs;
+      const R_ = board.results[prior], vb = simulate(R_.best), vf = simulate(R_.mean.map(v => (v > 0 ? G.SAND : G.SHALE)));
+      R_.misB = vb ? misfit(vb.d) : NaN; R_.misF = vf ? misfit(vf.d) : NaN;
+      log("&nbsp;&nbsp; simulated misfit of the best-matching member " + R_.misB.toFixed(2) + ", of the thresholded mean " + R_.misF.toFixed(2) + " noise units.");
       const plo = new Float64Array(ND), phi_ = new Float64Array(ND);
       for (let j = 0; j < ND; j++) { const v = post.map(d => d[j]).sort((a, b) => a - b); plo[j] = v[Math.floor(0.1 * (v.length - 1))]; phi_[j] = v[Math.ceil(0.9 * (v.length - 1))]; }
       let inside = 0; for (let j = 0; j < ND; j++) if (truth.d[j] >= plo[j] - 1e-9 && truth.d[j] <= phi_[j] + 1e-9) inside++;
@@ -634,7 +649,7 @@
   $(".run-dct").addEventListener("click", () => invert("dct"));
   $(".run-vcae").addEventListener("click", () => invert("vcae"));
   $(".run-grid").addEventListener("click", () => invert("grid"));
-  root.querySelectorAll("input,select").forEach(el => el.addEventListener("input", () => { readParams(); if (el.name === "play") { drawBoard(); score(); } if ((el.name === "noiseq" || el.name === "noisep") && !busy) newCase(); }));
+  root.querySelectorAll("input,select").forEach(el => el.addEventListener("input", () => { readParams(); if (el.name === "play" || el.name === "est") { drawBoard(); score(); if (board.evo) drawEvo(board.evo, board.evoStd); } if ((el.name === "noiseq" || el.name === "noisep") && !busy) newCase(); }));
   readParams();
   // the case is built on first view, so the page loads without a simulator run
   const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); newCase(); loadNets().catch(() => log("Could not load the trained networks.")); } });
