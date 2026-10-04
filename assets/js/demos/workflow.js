@@ -11,7 +11,10 @@
      3 train     a CCR surrogate xi -> production (cluster-classify-regress,
                  ccr.js), live;
      4 validate  on held-out simulations: accuracy and measured speed-up;
-     5 invert    alpha-REKI (1/alpha from the mean and variance of the data
+     5 invert    (options: covariance localisation, made on the grid with a
+                 Gaspari-Cohn taper and projected back onto the basis, and
+                 inflation against ensemble collapse)
+                 alpha-REKI (1/alpha from the mean and variance of the data
                  misfit, Iglesias and Yang; stopped when sum 1/alpha = 1) or ES-MDA (alpha = number of assimilations) on
                  xi, the surrogate as forward model, against noisy observations
                  of a hidden "true" field;
@@ -23,8 +26,10 @@
   const root = document.getElementById("demo-workflow");
   if (!root || !window.NVRS) return;
   const E = window.NVRS, $ = s => root.querySelector(s);
-  const mapCv = $("canvas.maps"), crvCv = $("canvas.curves"), lossCv = $("canvas.loss");
-  const mc = mapCv.getContext("2d"), cc = crvCv.getContext("2d"), lc = lossCv.getContext("2d");
+  const mapCv = $("canvas.maps"), crvCv = $("canvas.curves"), lossCv = $("canvas.loss"), alphaCv = $("canvas.alpha");
+  const mc = mapCv.getContext("2d"), cc = crvCv.getContext("2d"), lc = lossCv.getContext("2d"), ac = alphaCv.getContext("2d");
+  const drawAlpha = series => window.PLOTS && window.PLOTS.alpha(ac, alphaCv.width, alphaCv.height, series,
+    (P_.method === 1 ? "ES-MDA: alpha = N_a at every assimilation" : "alpha-REKI: alpha against iteration") + " (left, log) and sum of 1/alpha (right)");
   const P_ = {};
   const n = 16, MD = 6, NR = 20, T_END = 300, SIG = 1.3, VISC = 5;
   const RT = Array.from({ length: NR }, (_, i) => (i + 1) * T_END / NR);
@@ -55,6 +60,16 @@
     }
     s = Math.sqrt(s / (n * n)); return b.map(v => v / s);
   });
+  function project(f) {                      // ln K field -> basis coefficients (exact for fields in the span)
+    return BASIS.map(b => { let s = 0; for (let k = 0; k < n * n; k++) s += f[k] * b[k]; return s / (n * n) * Math.sqrt(MD) / SIG; });
+  }
+  // Gaspari-Cohn taper, zero beyond the radius L (cells)
+  function gc(d, L) {
+    const r = 2 * d / L;
+    if (r >= 2) return 0;
+    if (r <= 1) return (((-0.25 * r + 0.5) * r + 0.625) * r - 5 / 3) * r * r + 1;
+    return ((((r / 12 - 0.5) * r + 0.625) * r + 5 / 3) * r - 5) * r + 4 - 2 / (3 * r);
+  }
   function logK(xi) {
     const f = new Float64Array(n * n);
     for (let m = 0; m < MD; m++) for (let k = 0; k < n * n; k++) f[k] += SIG * xi[m] * BASIS[m][k] / Math.sqrt(MD);
@@ -201,11 +216,23 @@
     const Ne = P_.ne | 0, Na = P_.na | 0, m = obsIdx.length;
     const meanOf = A => A[0].map((_, j) => A.reduce((s, a) => s + a[j], 0) / A.length);
     const obsY = new Float64Array(NY); obsIdx.forEach((i, p) => { obsY[i] = dobs[p]; });
-    let re, ens, priorMeanK;
+    let re, ens, priorMeanK; const alphaSeries = [];
+    // localisation: the distance from each cell to the well of each datum (field oil rate: the nearest producer)
+    const Lr = P_.loc | 0, beta = P_.infl || 1;
+    const dist = (k, w) => Math.hypot((k % n) - (w % n), ((k / n) | 0) - ((w / n) | 0));
+    const RHO = Lr > 0 ? Array.from({ length: n * n }, (_, k) => Float64Array.from(obsIdx, i => {
+      const grp = Math.floor(i / NR);
+      const d = grp < NP ? dist(k, WELLS[1 + grp][0]) : grp === NP ? Math.min(...WELLS.slice(1).map(w => dist(k, w[0]))) : dist(k, WELLS[0][0]);
+      return gc(d, Lr); })) : null;
+    const spread = E_ => { const F = E_.map(logK), mm = meanOf(F); let s = 0; for (let k = 0; k < n * n; k++) s += Math.sqrt(F.reduce((a, f) => a + (f[k] - mm[k]) ** 2, 0) / F.length); return s / (n * n); };
+    let spread0 = 0;
     async function historyMatch(tag) {
     re = rng(99);                              // the same starting ensemble in every round
     ens = Array.from({ length: Ne }, () => Array.from({ length: MD }, () => gaussFrom(re)));
-    priorMeanK = logK(meanOf(ens));
+    priorMeanK = logK(meanOf(ens)); spread0 = spread(ens);
+    log("&nbsp;&nbsp; " + (Lr > 0 ? "localisation radius " + Lr + " cells (update on the grid, projected onto the basis)" : "no localisation") +
+        (beta > 1 ? ", inflation " + beta.toFixed(2) + " whenever the spread falls below half the prior spread" : ", no inflation") +
+        "; prior spread of ln K " + spread0.toFixed(3) + ".");
     drawMaps([logK(xiTrue), priorMeanK], ["true field", "prior mean"]);
     drawCurves([...ens.slice(0, 40).map(u => ({ y: g(u), col: "rgba(79,160,255,.25)" })), { y: truth.y, col: "#ff4d4d", w: 2 }, { y: obsY, dots: true }],
                "prior ensemble (blue), true model (red), observed (red dots)" + tag);
@@ -223,15 +250,33 @@
       const L = Cdd.map(row => Float64Array.from(row));
       for (let i = 0; i < m; i++) { for (let j = 0; j <= i; j++) { let s = L[i][j]; for (let k = 0; k < j; k++) s -= L[i][k] * L[j][k]; L[i][j] = i === j ? Math.sqrt(Math.max(s, 1e-12)) : s / L[j][j]; } for (let j = i + 1; j < m; j++) L[i][j] = 0; }
       const solve = v => { const y = Float64Array.from(v); for (let i = 0; i < m; i++) { for (let k = 0; k < i; k++) y[i] -= L[i][k] * y[k]; y[i] /= L[i][i]; } for (let i = m - 1; i >= 0; i--) { for (let k = i + 1; k < m; k++) y[i] -= L[k][i] * y[k]; y[i] /= L[i][i]; } return y; };
-      ens = ens.map((u, j) => {
-        const w = solve(obsIdx.map((_, p) => dobs[p] + Math.sqrt(alpha) * sdObs * gaussFrom(re) - D[j][p]));
-        return u.map((v, q) => v + Cud[q].reduce((s, c, p) => s + c * w[p], 0));
-      });
+      if (RHO) {
+        // localised update on the grid: (rho o C_fd) (C_dd + alpha C_d)^-1, then back onto the basis
+        const F = ens.map(logK), fm = meanOf(F), N2 = n * n, Cfd = Array.from({ length: N2 }, () => new Float64Array(m));
+        for (let j = 0; j < Ne; j++) for (let k = 0; k < N2; k++) { const df = (F[j][k] - fm[k]) / (Ne - 1); for (let p = 0; p < m; p++) Cfd[k][p] += df * (D[j][p] - dm[p]); }
+        for (let k = 0; k < N2; k++) for (let p = 0; p < m; p++) Cfd[k][p] *= RHO[k][p];
+        ens = F.map((f, j) => {
+          const w = solve(obsIdx.map((_, p) => dobs[p] + Math.sqrt(alpha) * sdObs * gaussFrom(re) - D[j][p]));
+          return project(f.map((v, k) => v + Cfd[k].reduce((s, c, p) => s + c * w[p], 0)));
+        });
+      } else {
+        ens = ens.map((u, j) => {
+          const w = solve(obsIdx.map((_, p) => dobs[p] + Math.sqrt(alpha) * sdObs * gaussFrom(re) - D[j][p]));
+          return u.map((v, q) => v + Cud[q].reduce((s, c, p) => s + c * w[p], 0));
+        });
+      }
+      inflated = false;
+      if (beta > 1 && spread(ens) < 0.5 * spread0) {    // inflation, only against collapse
+        const mm = meanOf(ens); ens = ens.map(u => u.map((v, q) => mm[q] + beta * (v - mm[q]))); inflated = true;
+      }
     }
+    let inflated = false;
     function phis() {                          // 1/2 || C_d^-1/2 (G(m_j) - d) ||^2 per member
       return ens.map(u => { const y = g(u); let s = 0; obsIdx.forEach((i, p) => { s += 0.5 * ((y[i] - dobs[p]) / sdObs) ** 2; }); return s; });
     }
     let sumInv = 0, it = 0;
+    const AS = { alphas: [], label: tag ? tag.replace(/^, /, "") : "first match", col: ["#4fa0ff", "#ffb74d", "#c792ea", "#ff6b6b"][alphaSeries.length % 4] };
+    alphaSeries.push(AS);
     const maxIt = method === "areki" ? 20 : Na;
     while (it < maxIt) {
       let alpha;
@@ -240,15 +285,16 @@
         // Iglesias and Yang: 1/alpha = max(n_d / (2 mean Phi), sqrt(n_d / (2 var Phi))), capped at 1 - sum 1/alpha
         const ph = phis(), mu = ph.reduce((a, b) => a + b, 0) / Ne, va = ph.reduce((a, b) => a + (b - mu) ** 2, 0) / Ne;
         alpha = 1 / Math.min(Math.max(m / (2 * mu), Math.sqrt(m / (2 * va))), 1 - sumInv);
+        if (it === maxIt - 1) alpha = 1 / (1 - sumInv);       // the last allowed iteration completes sum 1/alpha = 1
       }
-      kalman(alpha); sumInv += 1 / alpha; it++;
+      kalman(alpha); sumInv += 1 / alpha; it++; AS.alphas.push(alpha); drawAlpha(alphaSeries);
       const pm = g(meanOf(ens));
       drawMaps([logK(xiTrue), priorMeanK, logK(meanOf(ens))], ["true field", "prior mean", "mean, iteration " + it]);
       drawCurves([...ens.slice(0, 40).map(u => ({ y: g(u), col: "rgba(79,160,255,.25)" })), { y: pm, col: "#4fa0ff", w: 2.2 }, { y: truth.y, col: "#ff4d4d", w: 2 }, { y: obsY, dots: true }],
                  "ensemble (blue), true model (red), observed (red dots), iteration " + it + tag);
       let mis = 0; obsIdx.forEach((i, p) => { mis += (pm[i] - dobs[p]) ** 2; });
       log("&nbsp;&nbsp; iteration " + it + ": alpha = " + alpha.toFixed(2) + ", sum 1/alpha = " + Math.min(1, sumInv).toFixed(3) +
-          ", RMS misfit of the posterior mean " + Math.sqrt(mis / m).toFixed(3));
+          ", RMS misfit of the posterior mean " + Math.sqrt(mis / m).toFixed(3) + ", spread of ln K " + spread(ens).toFixed(3) + (inflated ? " (inflated)" : ""));
       $(".prog").style.width = (100 * Math.min(1, sumInv)).toFixed(0) + "%";
       await new Promise(res => setTimeout(res, 350));
       if (sumInv >= 1 - 1e-9) { log("&nbsp;&nbsp; converged: sum of 1/alpha reached 1."); break; }
@@ -298,4 +344,5 @@
   drawMaps([logK(new Float64Array(MD))], ["prior mean field"]);
   drawCurves([], "press Run the workflow");
   drawLoss([], 0, "CCR clustering (elbow)");
+  drawAlpha([]);
 })();

@@ -165,6 +165,7 @@
     if (P_.method === "areki") {             // alpha-REKI (Iglesias and Yang), stopped at sum 1/alpha = 1
       const ph = phis(), Ne = ph.length, mu = ph.reduce((a, b) => a + b, 0) / Ne, va = ph.reduce((a, b) => a + (b - mu) ** 2, 0) / Ne;
       alpha = 1 / Math.min(Math.max(2 * T / (2 * mu), Math.sqrt(2 * T / (2 * va))), 1 - sumInv);
+      if (stepNo === 19) alpha = 1 / (1 - sumInv);             // the last allowed iteration completes sum 1/alpha = 1
     }
     update(alpha); sumInv += 1 / alpha; alphaPrev = alpha; lastAlpha = alpha;
     stepNo++; hist.push(misfit()); draw();

@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
-<link rel="stylesheet" href="../assets/css/work.css?v=20261004215841">
+<link rel="stylesheet" href="../assets/css/work.css?v=20261004222027">
 </head>
 <body>
 <nav class="wnav">
@@ -49,6 +49,7 @@ from a hidden field; and the simulator is run on the matched model to verify it.
     <div>
       <canvas class="maps" width="560" height="300" aria-label="Permeability fields"></canvas>
       <canvas class="loss" width="560" height="190" aria-label="CCR elbow" style="margin-top:12px"></canvas>
+      <canvas class="alpha" width="560" height="210" aria-label="alpha against iteration" style="margin-top:12px"></canvas>
     </div>
     <div>
       <canvas class="curves" width="560" height="300" aria-label="Production curves"></canvas>
@@ -58,14 +59,19 @@ from a hidden field; and the simulator is run on the matched model to verify it.
   <div class="controls">
     <label>Training simulations <span class="v" data-for="runs"></span><input type="range" name="runs" min="50" max="250" step="10" value="120"></label>
     <label>History matching <select name="method"><option value="areki">alpha-REKI (adaptive alpha)</option><option value="esmda">ES-MDA</option></select></label>
-    <label>Ensemble size <span class="v" data-for="ne"></span><input type="range" name="ne" min="50" max="400" step="50" value="200"></label>
+    <label>Ensemble size <span class="v" data-for="ne"></span><input type="range" name="ne" min="50" max="400" step="50" value="100"></label>
     <label>ES-MDA assimilations <span class="v" data-for="na"></span><input type="range" name="na" min="1" max="8" step="1" value="4"></label>
+    <label>Localisation radius, cells (0 = off) <span class="v" data-for="loc"></span><input type="range" name="loc" min="0" max="24" step="2" value="16"></label>
+    <label>Inflation beta (1 = off) <span class="v" data-for="infl"></span><input type="range" name="infl" min="1" max="1.5" step="0.05" value="1.1"></label>
     <label>Surrogate refinement rounds <span class="v" data-for="refine"></span><input type="range" name="refine" min="0" max="3" step="1" value="1"></label>
     <label>Observation noise <span class="v" data-for="noise"></span><input type="range" name="noise" min="0.01" max="0.1" step="0.01" value="0.03"></label>
   </div>
   <div class="dbtns"><button class="run">Run the workflow</button><button class="truth ghost">New hidden field and rerun</button></div>
   <p class="dnote">16 x 16 cells, two-phase, six geological parameters, a five-spot (injector in the centre, a producer
-  in each corner), 20 report times of the water cut of every producer, the field oil rate and the injector pressure. The surrogate is CCR (cluster-classify-regress) trained on the runs as they finish; after the first match, each refinement round runs the simulator on 24 posterior members, adds them to the training set,
+  in each corner), 20 report times of the water cut of every producer, the field oil rate and the injector pressure. The surrogate is CCR (cluster-classify-regress) trained on the runs as they finish; localisation tapers the cross-covariance on the grid with a Gaspari-Cohn function of the distance to the well
+  of each datum and projects the update back onto the six basis functions (it regularises the field, at the price of a
+  slower and slightly looser data match; set the radius to 0 to switch it off); inflation rescales the ensemble about its
+  mean when its spread falls below half the prior spread; after the first match, each refinement round runs the simulator on 24 posterior members, adds them to the training set,
   retrains CCR and matches again, so the surrogate is accurate where the posterior lives; every simulation, the training,
   the timing and the inversion are computed live on this page, in JavaScript on your CPU (no GPU, no server), so the
   run takes about a minute.</p>
@@ -166,13 +172,14 @@ document.querySelectorAll('.eq-render').forEach(function (el) {
   try { katex.render(el.getAttribute('data-eq'), el, {throwOnError: false, displayMode: true}); } catch (e) {}
 });
 </script>
-<script src="../assets/js/lightbox.js?v=20261004215841"></script>
-<script src="../assets/js/demos/nvrs_engine.js?v=20261004215841"></script>
-<script src="../assets/js/demos/ccr.js?v=20261004215841"></script>
-<script src="../assets/js/demos/workflow.js?v=20261004215841"></script>
-<script src="../assets/js/demos/geology.js?v=20261004215841"></script>
-<script src="../assets/js/demos/inverse.js?v=20261004215841"></script>
-<script src="../assets/js/demos/waterflood.js?v=20261004215841"></script>
+<script src="../assets/js/lightbox.js?v=20261004222027"></script>
+<script src="../assets/js/demos/nvrs_engine.js?v=20261004222027"></script>
+<script src="../assets/js/demos/plots.js?v=20261004222027"></script>
+<script src="../assets/js/demos/ccr.js?v=20261004222027"></script>
+<script src="../assets/js/demos/workflow.js?v=20261004222027"></script>
+<script src="../assets/js/demos/geology.js?v=20261004222027"></script>
+<script src="../assets/js/demos/inverse.js?v=20261004222027"></script>
+<script src="../assets/js/demos/waterflood.js?v=20261004222027"></script>
 
 </body>
 </html>

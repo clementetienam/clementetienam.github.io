@@ -338,6 +338,8 @@
       return;
     }
     const hist = kind && kind.alphas;
+    if (window.PLOTS) { window.PLOTS.alpha(c, W, H, hist ? [{ alphas: hist, label: kind.label || "", col: "#4fa0ff" }] : [],
+      (P_.method === "esmda" ? "ES-MDA: alpha = N_a" : "alpha-REKI: alpha against iteration") + " (left, log) and sum of 1/alpha (right)"); return; }
     c.fillText("alpha per iteration (bars) and the running sum of 1/alpha (line)", 10, 16);
     if (!hist || !hist.length) return;
     const nb_ = Math.max(hist.length, 4), bw = (W - 60) / nb_, amax = Math.max(...hist) * 1.1, Y = v => H - 24 - (H - 50) * v;
@@ -486,6 +488,7 @@
           // Iglesias and Yang: 1/alpha = max(n_d / (2 mean Phi), sqrt(n_d / (2 var Phi))), capped at 1 - sum 1/alpha
           const ph = phis(), mu = ph.reduce((a, b) => a + b, 0) / Ne, va = ph.reduce((a, b) => a + (b - mu) ** 2, 0) / Ne;
           alpha = 1 / Math.min(Math.max(ND / (2 * mu), Math.sqrt(ND / (2 * va))), 1 - sumInv);
+          if (it === maxIt - 1) alpha = 1 / (1 - sumInv);     // the last allowed iteration completes sum 1/alpha = 1
         }
         const um = meanOf(ens), dm = meanOf(D), Cud = Array.from({ length: dim }, () => new Float64Array(ND)), Cdd = Array.from({ length: ND }, () => new Float64Array(ND));
         for (let j = 0; j < Ne; j++) for (let p = 0; p < ND; p++) {
@@ -512,7 +515,7 @@
           const m = meanOf(ens); ens = ens.map(u => u.map((v, q) => m[q] + beta * (v - m[q]))); inflated = true;
         }
         sumInv += 1 / alpha; aPrev = alpha; it++; alphas.push(alpha);
-        await evalEns(); show(it, ", alpha " + alpha.toFixed(1)); drawSide({ alphas });
+        await evalEns(); show(it, ", alpha " + alpha.toFixed(1)); drawSide({ alphas, label: (prior === "vcae" ? "VCAE" : prior === "grid" ? "grid cells" : "DCT") + (method === "areki" ? ", alpha-REKI" : ", ES-MDA") });
         log("&nbsp;&nbsp; iteration " + it + ": alpha = " + alpha.toFixed(2) + ", sum 1/alpha = " + Math.min(1, sumInv).toFixed(3) + ", mean data misfit " + Math.sqrt(2 * phi() / ND).toFixed(2) + " noise units, spread of ln K " + spread(ens.map(toField)).toFixed(3) + (inflated ? " (inflated)" : ""));
         $(".prog").style.width = (100 * (method === "areki" ? Math.min(1, sumInv) : it / Na)).toFixed(0) + "%";
         await tick(450);
