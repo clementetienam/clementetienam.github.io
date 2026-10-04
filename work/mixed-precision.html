@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
-<link rel="stylesheet" href="../assets/css/work.css?v=20261004233133">
+<link rel="stylesheet" href="../assets/css/work.css?v=20261005000838">
 </head>
 <body>
 <nav class="wnav">
@@ -58,12 +58,12 @@ iteration counts, the time per stage and the solution.</p>
   <div class="controls">
     <label>Preconditioner precision <select name="prec"><option value="fp64">FP64</option><option value="fp32" selected>FP32 (the paper)</option><option value="fp16">FP16</option></select></label>
     <label>Wells <select name="wells"><option value="fivespot" selected>five-spot (1 injector, 4 producers)</option><option value="pair">quarter five-spot (corner to corner)</option></select></label>
-    <label>Grid <select name="n"><option value="16" selected>16 x 16</option><option value="32">32 x 32 (slower)</option></select></label>
+    <label>Grid <select name="n"><option value="16">16 x 16</option><option value="32" selected>32 x 32</option><option value="56">56 x 56 (slower)</option></select></label>
     <label>Heterogeneity (std of ln K) <span class="v" data-for="sigma"></span><input type="range" name="sigma" min="0.2" max="3" step="0.1" value="1.5"></label>
     <label>Oil/water viscosity ratio <span class="v" data-for="visc"></span><input type="range" name="visc" min="1" max="20" step="1" value="5"></label>
     <label>Geology seed <span class="v" data-for="seed"></span><input type="range" name="seed" min="1" max="30" step="1" value="3"></label>
     <label>FGMRES restart <span class="v" data-for="restart"></span><input type="range" name="restart" min="10" max="60" step="5" value="30"></label>
-    <label>Report step <span class="v" data-for="dtmax"></span><input type="range" name="dtmax" min="1" max="40" step="1" value="12"></label>
+    <label>Time per movie frame <span class="v" data-for="frame"></span><input type="range" name="frame" min="1" max="12" step="1" value="3"></label>
     <label>End time <span class="v" data-for="tend"></span><input type="range" name="tend" min="50" max="1000" step="50" value="400"></label>
     <label>Show <select name="view"><option value="S">water saturation</option><option value="p">pressure</option><option value="K">log permeability</option></select></label>
   </div>
@@ -80,7 +80,9 @@ iteration counts, the time per stage and the solution.</p>
   steps). FP16 is emulated by rounding every operation of the preconditioner, applied to the row-scaled
   pressure matrix. This app runs in your browser, in JavaScript on the CPU, with no GPU and no server: a two-phase model
   far smaller than the three-phase GPU simulator, but with the same stages in its nonlinear and linear solvers.
-  Larger grids take a few seconds per report step.</p>
+  The run and its FP64 reference each run in a Web Worker, so the page stays responsive, and play as a movie: every frame
+  advances the chosen time and redraws the field and the well curves. A fully implicit step costs far more per cell than
+  the IMPES waterflood further down this page, so the 56 x 56 grid plays at about one frame per half second.</p>
 </div></div></section><section class="wsec" id="movies"><div class="wrap"><span class="num">04 · Movies</span><h2>Fields against OPM Flow</h2><hr class="rule"><div class="gallery wide"><figure class="fig movie" tabindex="0" data-zoom="../assets/media/nvrs/norne_fields.gif" data-group="nvrs-mov" data-caption="Norne: NVRS-CUDA against OPM Flow. Pressure, water, oil and gas saturation over the field history: OPM Flow, NVRS-CUDA and their difference."><div class="ph"><img src="../assets/media/nvrs/norne_fields_poster.jpg" data-anim="../assets/media/nvrs/norne_fields.gif" alt="Norne: NVRS-CUDA against OPM Flow" loading="lazy"><span class="play">movie</span><span class="zoomhint">click to enlarge</span></div><figcaption><b>Norne: NVRS-CUDA against OPM Flow</b>Pressure, water, oil and gas saturation over the field history: OPM Flow, NVRS-CUDA and their difference.</figcaption></figure><figure class="fig movie" tabindex="0" data-zoom="../assets/media/nvrs/spe10_fields.gif" data-group="nvrs-mov" data-caption="SPE10 model 2: the flood. 1.12 million cells over 1,000 days: pressure and saturations from OPM Flow and NVRS-CUDA, and their difference."><div class="ph"><img src="../assets/media/nvrs/spe10_fields_poster.jpg" data-anim="../assets/media/nvrs/spe10_fields.gif" alt="SPE10 model 2: the flood" loading="lazy"><span class="play">movie</span><span class="zoomhint">click to enlarge</span></div><figcaption><b>SPE10 model 2: the flood</b>1.12 million cells over 1,000 days: pressure and saturations from OPM Flow and NVRS-CUDA, and their difference.</figcaption></figure><figure class="fig movie" tabindex="0" data-zoom="../assets/media/nvrs/bench3p_fields.gif" data-group="nvrs-mov" data-caption="Three-phase benchmark. A three-phase waterflood with free gas: OPM Flow, NVRS-CUDA and the difference at every report step."><div class="ph"><img src="../assets/media/nvrs/bench3p_fields_poster.jpg" data-anim="../assets/media/nvrs/bench3p_fields.gif" alt="Three-phase benchmark" loading="lazy"><span class="play">movie</span><span class="zoomhint">click to enlarge</span></div><figcaption><b>Three-phase benchmark</b>A three-phase waterflood with free gas: OPM Flow, NVRS-CUDA and the difference at every report step.</figcaption></figure></div></div></section><section class="wsec" id="results"><div class="wrap"><span class="num">05 · Results</span><h2>Norne, SPE10 and the Million family</h2><hr class="rule">
 <p>Wall clock in seconds on one GPU, from the paper. Flow is OPM Flow 2024.10 (its GPU linear solver on one rank for
 Norne and Bench3P, its CPU solver with two threads for SPE10 on the VR72 host). NVRS-CUDA runs every model on one
@@ -182,11 +184,11 @@ document.querySelectorAll('.eq-render').forEach(function (el) {
   try { katex.render(el.getAttribute('data-eq'), el, {throwOnError: false, displayMode: true}); } catch (e) {}
 });
 </script>
-<script src="../assets/js/lightbox.js?v=20261004233133"></script>
-<script src="../assets/js/demos/nvrs_engine.js?v=20261004233133"></script>
-<script src="../assets/js/demos/nvrs_sim.js?v=20261004233133"></script>
-<script src="../assets/js/demos/scaling.js?v=20261004233133"></script>
-<script src="../assets/js/demos/precision.js?v=20261004233133"></script>
+<script src="../assets/js/lightbox.js?v=20261005000838"></script>
+<script src="../assets/js/demos/nvrs_engine.js?v=20261005000838"></script>
+<script src="../assets/js/demos/nvrs_sim.js?v=20261005000838"></script>
+<script src="../assets/js/demos/scaling.js?v=20261005000838"></script>
+<script src="../assets/js/demos/precision.js?v=20261005000838"></script>
 
 </body>
 </html>
