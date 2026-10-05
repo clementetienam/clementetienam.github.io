@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
-<link rel="stylesheet" href="../assets/css/work.css?v=20261005000838">
+<link rel="stylesheet" href="../assets/css/work.css?v=20261005101919">
 </head>
 <body>
 <nav class="wnav">
@@ -29,7 +29,13 @@
 <p>The Norne example in PhysicsNeMo couples three learned components into a complete reservoir-engineering
 workflow on a real field model: a Fourier or physics-informed neural operator that advances the black-oil
 state, a Cluster-Classify-Regress mixture of experts for the well rates, and an adaptive regularised ensemble
-Kalman inversion that recovers permeability, porosity and fault multipliers from production data.</p><div class="cols"><div class="card"><h3>Forward surrogate (FNO / PINO)</h3><p>A neural operator maps permeability, porosity, fault multipliers and controls to pressure and saturations at every report step, trained with data and the PDE residual.</p></div><div class="card"><h3>Well rates (CCR)</h3><p>Cluster-Classify-Regress, a mixture of experts built for discontinuous responses, maps the predicted state at the wells to oil, water and gas rates.</p></div><div class="card"><h3>Inverse problem (alpha-REKI or ES-MDA)</h3><p>Adaptive regularised ensemble Kalman inversion, or the ensemble smoother with multiple data assimilation, with covariance localisation, conditions the ensemble on the field history.</p></div><div class="card"><h3>Sequential and physics-constrained</h3><p>Autoregressive training on the model&#x27;s own predictions removes the exposure bias of teacher forcing over long rollouts.</p></div></div></div></section><section class="wsec" id="maths"><div class="wrap"><span class="num">02 · Mathematics</span><h2>What is being learned</h2><hr class="rule"><div class="eq"><div class="eq-render" data-eq="\frac{\partial}{\partial t}\Big(\phi\, b_\alpha S_\alpha\Big) - \nabla\cdot\big(b_\alpha \lambda_\alpha \mathbf{K}\,\nabla\Phi_\alpha\big) = b_\alpha q_\alpha,\qquad \alpha\in\{w,o,g\}"></div><p class="dnote" style="margin-top:8px">Black-oil mass conservation for water, oil and gas, with dissolved gas and Peaceman well terms.</p></div><div class="eq"><div class="eq-render" data-eq="\mathcal{L}(\theta)=\mathbb{E}\Big[\sum_{n}\big\|\hat x_{n+1}-x_{n+1}\big\|^2\Big]+\lambda_R\,\mathbb{E}\Big[\sum_n\big\|R(\hat x_{n+1},\hat x_n;u)\big\|^2\Big],\qquad \hat x_{n+1}=\mathcal{G}_\theta(u,\hat x_n)"></div><p class="dnote" style="margin-top:8px">Autoregressive data loss plus the discretised PDE residual R: the physics-informed neural operator objective.</p></div><div class="eq"><div class="eq-render" data-eq="u_j^{\,i+1}=u_j^{\,i}+C_{ud}\big(C_{dd}+\alpha_i C_e\big)^{-1}\big(d_{\rm obs}+\sqrt{\alpha_i}\,e_j-\mathcal{G}(u_j^{\,i})\big),\qquad \sum_i \alpha_i^{-1}=1"></div><p class="dnote" style="margin-top:8px">The ensemble Kalman update with the surrogate in place of the simulator. alpha-REKI chooses alpha_i = min(n_d / (2 Phi_i), rho alpha_(i-1)) from the mean data misfit Phi_i and stops when the sum of 1/alpha_i reaches one; ES-MDA uses alpha_i = N_a for N_a assimilations.</p></div></div></section><section class="wsec" id="workflow"><div class="wrap"><span class="num">03 · The workflow, live</span><h2>Simulate, train, validate, history-match, verify</h2><hr class="rule">
+Kalman inversion that recovers permeability, porosity and fault multipliers from production data.</p><div class="cols"><div class="card"><h3>Forward surrogate (FNO / PINO)</h3><p>A neural operator maps permeability, porosity, fault multipliers and controls to pressure and saturations at every report step, trained with data and the PDE residual.</p></div><div class="card"><h3>Well rates (CCR)</h3><p>Cluster-Classify-Regress, a mixture of experts built for discontinuous responses, maps the predicted state at the wells to oil, water and gas rates.</p></div><div class="card"><h3>Inverse problem (alpha-REKI or ES-MDA)</h3><p>Adaptive regularised ensemble Kalman inversion, or the ensemble smoother with multiple data assimilation, with covariance localisation, conditions the ensemble on the field history.</p></div><div class="card"><h3>Sequential and physics-constrained</h3><p>Autoregressive training on the model&#x27;s own predictions removes the exposure bias of teacher forcing over long rollouts.</p></div></div></div></section><section class="wsec" id="maths"><div class="wrap"><span class="num">02 · Mathematics</span><h2>What is being learned</h2><hr class="rule"><div class="plain"><b>In plain words</b><ul>
+<li><b>The neural operator</b> (FNO) learns the map from a permeability field to the pressure and saturation fields over time, from simulator runs.</li>
+<li><b>The physics loss</b> (PINO) also penalises violations of the flow equations, so predictions stay consistent with mass conservation.</li>
+<li><b>The well model</b> (an FNO or CCR) turns the predicted states at the wells into oil, water and gas rates, the part a Peaceman model does in a simulator.</li>
+<li><b>History matching</b> (alpha-REKI or ES-MDA) runs this fast surrogate on whole ensembles to find the fields that reproduce the observed production.</li>
+</ul></div>
+<div class="eq"><div class="eq-render" data-eq="\frac{\partial}{\partial t}\Big(\phi\, b_\alpha S_\alpha\Big) - \nabla\cdot\big(b_\alpha \lambda_\alpha \mathbf{K}\,\nabla\Phi_\alpha\big) = b_\alpha q_\alpha,\qquad \alpha\in\{w,o,g\}"></div><p class="dnote" style="margin-top:8px">Black-oil mass conservation for water, oil and gas, with dissolved gas and Peaceman well terms.</p></div><div class="eq"><div class="eq-render" data-eq="\mathcal{L}(\theta)=\mathbb{E}\Big[\sum_{n}\big\|\hat x_{n+1}-x_{n+1}\big\|^2\Big]+\lambda_R\,\mathbb{E}\Big[\sum_n\big\|R(\hat x_{n+1},\hat x_n;u)\big\|^2\Big],\qquad \hat x_{n+1}=\mathcal{G}_\theta(u,\hat x_n)"></div><p class="dnote" style="margin-top:8px">Autoregressive data loss plus the discretised PDE residual R: the physics-informed neural operator objective.</p></div><div class="eq"><div class="eq-render" data-eq="u_j^{\,i+1}=u_j^{\,i}+C_{ud}\big(C_{dd}+\alpha_i C_e\big)^{-1}\big(d_{\rm obs}+\sqrt{\alpha_i}\,e_j-\mathcal{G}(u_j^{\,i})\big),\qquad \sum_i \alpha_i^{-1}=1"></div><p class="dnote" style="margin-top:8px">The ensemble Kalman update with the surrogate in place of the simulator. alpha-REKI chooses alpha_i = min(n_d / (2 Phi_i), rho alpha_(i-1)) from the mean data misfit Phi_i and stops when the sum of 1/alpha_i reaches one; ES-MDA uses alpha_i = N_a for N_a assimilations.</p></div></div></section><section class="wsec" id="workflow"><div class="wrap"><span class="num">03 · The workflow, live</span><h2>Simulate, train, validate, history-match, verify</h2><hr class="rule">
 <p>The workflow of the paper, end to end, in your browser, on a five-spot with a Gaussian permeability prior. The forward
 model has two stages, as in the paper: an <b>FNO</b> or a <b>PINO</b> (the same operator trained with the discrete
 mass-balance residual of the simulator as an extra loss) predicts <b>pressure and water saturation</b> at every report
@@ -58,6 +64,12 @@ as the forward model and compare the cost. The simulator then checks the matched
       <div class="wlog"></div>
     </div>
   </div>
+  <div class="presets"><span class="presets-lab">Presets</span>
+    <button class="ghost" data-preset='{"forward": "sur", "states": "pino", "wells": "fno1", "method": "areki", "ne": 100, "loc": 0, "infl": 1, "noise": 0.03}' data-note="Press Run. The blue ensemble narrows around the red true curves while the alpha plot steps down; at the end the simulator checks the matched field.">Beginner</button>
+    <button class="ghost" data-preset='{"forward": "sur", "states": "pino", "wells": "ccr", "method": "esmda", "na": 4, "ne": 200, "loc": 16, "infl": 1.1, "noise": 0.03}' data-note="Compare ES-MDA with alpha-REKI, CCR with the 1-D FNO well model and localisation on or off: the log reports validation R2, misfit and spread at every step.">Researcher</button>
+    <button class="ghost" data-preset='{"forward": "sim", "states": "pino", "wells": "fno1", "method": "areki", "ne": 40, "loc": 0, "infl": 1, "noise": 0.01}' data-note="The simulator itself is the forward model: about a minute and a half instead of a few seconds. Compare the timing line in the log with a surrogate run.">Stress test</button>
+    <p class="preset-note">Pick a preset to set the controls for a meaningful experiment; the note says what to watch.</p>
+  </div>
   <div class="controls">
     <label>Forward model <select name="forward"><option value="sur">surrogate (fast)</option><option value="sim">the simulator itself (slow)</option></select></label>
     <label>States model <select name="states"><option value="fno">FNO</option><option value="pino">PINO (FNO + physics loss)</option></select></label>
@@ -69,6 +81,7 @@ as the forward model and compare the cost. The simulator then checks the matched
     <label>Inflation beta (1 = off) <span class="v" data-for="infl"></span><input type="range" name="infl" min="1" max="1.5" step="0.05" value="1"></label>
     <label>Observation noise <span class="v" data-for="noise"></span><input type="range" name="noise" min="0.01" max="0.1" step="0.01" value="0.03"></label>
   </div>
+  <p class="demo-scope">Interactive demonstration on a 16 x 16 synthetic model, computed in JavaScript on your CPU. The Norne results on this page come from the full PhysicsNeMo implementation on GPUs.</p>
   <div class="dbtns"><button class="run">Run the workflow</button><button class="truth ghost">New hidden field and rerun</button></div>
   <p class="dnote">16 x 16 cells, two-phase, six Gaussian geological parameters, a five-spot (injector in the centre, a
   producer in each corner), 20 report times of the water cut of every producer, the field oil rate and the injector
@@ -108,6 +121,13 @@ updates stay on the channel manifold. You can paint your own guess and send it t
          <canvas class="side" width="560" height="200" aria-label="alpha schedule or CCR regimes" style="margin-top:12px"></canvas></div>
     <div><div class="score cmp"></div><div class="wlog"></div></div>
   </div>
+  <div class="presets"><span class="presets-lab">Presets</span>
+    <button class="ghost" data-preset='{"method": "areki", "well": "fno", "ne": 100, "noiseq": 10, "noisep": 5, "loc": 10, "infl": 1.1, "est": "best", "play": "off"}' data-note="Press Match with the VCAE prior, then Match with the DCT prior: the strip shows the channel forming iteration by iteration and the table compares them.">Beginner</button>
+    <button class="ghost" data-preset='{"method": "esmda", "well": "ccr", "na": 4, "ne": 140, "noiseq": 10, "noisep": 5, "loc": 10, "infl": 1.1, "est": "mean", "play": "off"}' data-note="Run all three contestants with CCR wells and ES-MDA; switch Show between best member, mean and thresholded mean; turn localisation off and compare the grid-cell and DCT runs.">Researcher</button>
+    <button class="ghost" data-preset='{"method": "areki", "well": "fno", "ne": 40, "noiseq": 2, "noisep": 1, "loc": 0, "infl": 1, "est": "best", "play": "off"}' data-note="A small ensemble, tight noise and no localisation or inflation: watch the spread collapse in the log and the blue band pull away from the red truth, then raise inflation.">Stress test</button>
+    <button class="ghost" data-preset='{"play": "on", "ne": 100, "noiseq": 10, "noisep": 5}' data-note="The truth is hidden. Paint your guess on the board, press Simulate my guess, let the algorithms try, then press Reveal.">Play the game</button>
+    <p class="preset-note">Pick a preset to set the controls for a meaningful experiment; the note says what to watch.</p>
+  </div>
   <div class="controls">
     <label>Method <select name="method"><option value="areki">alpha-REKI (adaptive alpha)</option><option value="esmda">ES-MDA</option></select></label>
     <label>Well model <select name="well"><option value="fno">FNO (states) + FNO (wells)</option><option value="ccr">FNO (states) + CCR (wells)</option></select></label>
@@ -122,6 +142,7 @@ updates stay on the channel manifold. You can paint your own guess and send it t
     <label>Show <select name="est"><option value="best">best-matching member (crisp)</option><option value="mean">posterior mean (smooth)</option><option value="facies">posterior mean, thresholded to sand/shale</option></select></label>
     <label>Play mode (hide the truth) <select name="play"><option value="off">off</option><option value="on">on</option></select></label>
   </div>
+  <p class="demo-scope">Interactive demonstration on a 16 x 16 synthetic model, computed in JavaScript on your CPU. The Norne results on this page come from the full PhysicsNeMo implementation on GPUs.</p>
   <div class="dbtns"><button class="run-grid">Match on the grid cells (no exotic prior)</button><button class="run-dct">Match with the DCT prior</button><button class="run-vcae">Match with the VCAE prior</button>
     <button class="tryguess ghost">Simulate my guess</button><button class="clearguess ghost">Clear my guess</button>
     <button class="reveal ghost">Reveal</button><button class="newcase ghost">New hidden reservoir</button></div>
@@ -154,6 +175,7 @@ the breakthrough time and the recovery change.</p>
         <label>Structure <select name="barrier"><option value="none">no fault</option><option value="fault">sealing fault with a gap</option></select></label>
         <label>View <select name="view"><option value="sat">water saturation</option><option value="perm">log permeability</option><option value="pressure">pressure</option></select></label>
       </div>
+  <p class="demo-scope">A teaching example (IMPES on a 56 x 56 grid), computed in your browser.</p>
       <div class="dbtns"><button class="run">Run</button><button class="reset ghost">Reset</button></div>
       <div class="readout"></div>
       <p class="dnote">56 x 56 cells, quarter five-spot, Corey relative permeability, unit injection rate.</p>
@@ -177,15 +199,16 @@ document.querySelectorAll('.eq-render').forEach(function (el) {
   try { katex.render(el.getAttribute('data-eq'), el, {throwOnError: false, displayMode: true}); } catch (e) {}
 });
 </script>
-<script src="../assets/js/lightbox.js?v=20261005000838"></script>
-<script src="../assets/js/demos/nvrs_engine.js?v=20261005000838"></script>
-<script src="../assets/js/demos/plots.js?v=20261005000838"></script>
-<script src="../assets/js/demos/ccr.js?v=20261005000838"></script>
-<script src="../assets/js/demos/fno.js?v=20261005000838"></script>
-<script src="../assets/js/demos/workflow.js?v=20261005000838"></script>
-<script src="../assets/js/demos/geology.js?v=20261005000838"></script>
-<script src="../assets/js/demos/inverse.js?v=20261005000838"></script>
-<script src="../assets/js/demos/waterflood.js?v=20261005000838"></script>
+<script src="../assets/js/lightbox.js?v=20261005101919"></script>
+<script src="../assets/js/demos/nvrs_engine.js?v=20261005101919"></script>
+<script src="../assets/js/demos/plots.js?v=20261005101919"></script>
+<script src="../assets/js/demos/ccr.js?v=20261005101919"></script>
+<script src="../assets/js/demos/fno.js?v=20261005101919"></script>
+<script src="../assets/js/demos/workflow.js?v=20261005101919"></script>
+<script src="../assets/js/demos/geology.js?v=20261005101919"></script>
+<script src="../assets/js/demos/inverse.js?v=20261005101919"></script>
+<script src="../assets/js/demos/waterflood.js?v=20261005101919"></script>
+<script src="../assets/js/demos/presets.js?v=20261005101919"></script>
 
 </body>
 </html>

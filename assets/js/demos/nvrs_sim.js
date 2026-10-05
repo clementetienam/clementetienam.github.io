@@ -186,7 +186,7 @@
     const r = await A.call("compare", { restart: P_.restart | 0 });
     $(".cmp").innerHTML = "<table><tr><th>CPR preconditioner in</th><th>Newton</th><th>FGMRES</th><th>time</th><th>max |S_w - S_w(FP64)|</th></tr>" +
       (r.rows || []).map(row => "<tr>" + row.map(c => "<td>" + c + "</td>").join("") + "</tr>").join("") + "</table>" +
-      '<p class="dnote">The same next time step solved three times from the current state. With FGMRES in FP64 the solutions agree to the Newton tolerance; the preconditioner precision changes the iteration counts.</p>';
+      '<p class="dnote">The same next time step solved three times from the current state. With FGMRES in FP64 all three are converged to the same Newton and linear tolerances, so they agree to within those tolerances; the last column is the measured difference. The preconditioner precision changes the iteration counts.</p>';
   });
   root.querySelectorAll("input,select").forEach(el => el.addEventListener("input", () => {
     readParams();

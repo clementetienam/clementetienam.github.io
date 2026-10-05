@@ -725,6 +725,12 @@
     .work-desc { font-size: 13px; color: var(--muted); line-height: 1.65; flex: 1; }
     .work-more { font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent2); }
     .work-card:hover .work-more { color: var(--accent); }
+    .contrib-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 0 0 28px; }
+    .contrib { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
+    .contrib b { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); }
+    .contrib span:last-child { font-size: 13px; color: var(--muted); line-height: 1.6; }
+    .contrib-num { font-size: 10.5px; letter-spacing: .16em; color: var(--accent); }
+    @media (max-width: 900px) { .contrib-grid { grid-template-columns: 1fr; } }
     /* ── MENU BUTTON (small screens) ── */
     .nav-toggle { display: none; background: none; border: 1px solid var(--border); color: var(--text); border-radius: 4px; width: 40px; height: 36px; font-size: 18px; cursor: pointer; }
     @media (max-width: 1100px) { .work-grid { grid-template-columns: 1fr 1fr; } }
@@ -877,15 +883,16 @@
           </p>
           <div class="about-eq"><span class="eq-render" data-eq="\partial_t(\phi S_\alpha) + \nabla\!\cdot\!F_\alpha(S, p, K) = q_\alpha"></span></div>
           <p>
-            across thousands of permeability realisations in a single forward pass, achieving up to
-            <strong>6000× speedup</strong> over conventional simulators. I contribute to the
+            across thousands of permeability realisations in a single forward pass, with forward evaluations up to
+            <strong>6000× faster</strong> than a conventional simulator once the surrogate is trained (time per
+            realisation; the one-off training cost is not included). I contribute to the
             <strong>NVIDIA PhysicsNeMo</strong> open-source framework.
           </p>
         </div>
         <div class="stats-grid reveal">
           <div class="stat-box">
             <div class="num">6000<span>×</span></div>
-            <div class="lbl">Simulation speedup</div>
+            <div class="lbl">Surrogate speed-up per forward run</div>
           </div>
           <div class="stat-box">
             <div class="num">166</div>
@@ -911,6 +918,11 @@
         <h2>Featured Work</h2>
       </div>
       <hr class="section-rule">
+      <div class="contrib-grid reveal">
+        <div class="contrib"><span class="contrib-num">01</span><b>GPU-native numerical methods</b><span>Fully implicit reservoir simulation on the GPU: Newton with FP64 FGMRES and a two-stage CPR preconditioner whose multigrid stage runs in reduced precision.</span></div>
+        <div class="contrib"><span class="contrib-num">02</span><b>Physics-constrained neural operators</b><span>FNO and PINO surrogates for multiphase flow, with learned Peaceman well models (FNO or CCR), for fast forward modelling.</span></div>
+        <div class="contrib"><span class="contrib-num">03</span><b>Bayesian history matching</b><span>alpha-REKI and ES-MDA with learned surrogates and geological priors, from Gaussian fields to generative models of channels.</span></div>
+      </div>
       <div class="work-grid">
         <a href="work/pino-norne.html" class="work-card reveal">
           <div class="work-media"><img src="assets/media/pino/forward_rollout_poster.jpg" data-hover="assets/media/pino/forward_rollout.gif" alt="PINO forward rollout on the Norne field" loading="lazy"><span class="work-live">live demo</span></div>

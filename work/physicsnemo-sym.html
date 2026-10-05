@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
-<link rel="stylesheet" href="../assets/css/work.css?v=20261005000838">
+<link rel="stylesheet" href="../assets/css/work.css?v=20261005101919">
 </head>
 <body>
 <nav class="wnav">
@@ -50,6 +50,7 @@ onto the data.</p>
     <label>ES-MDA assimilations <span class="v" data-for="na"></span><input type="range" name="na" min="1" max="8" step="1" value="4"></label>
     <label>Observation noise <span class="v" data-for="noise"></span><input type="range" name="noise" min="0.01" max="0.15" step="0.01" value="0.04"></label>
   </div>
+  <p class="demo-scope">A two-parameter teaching example of the ensemble update, computed in your browser. The results above come from the PhysicsNeMo-Sym examples.</p>
   <div class="dbtns"><button class="run">Assimilate</button><button class="truth ghost">New truth</button><button class="reset ghost">Reset</button></div>
   <div class="readout"></div>
   <p class="dnote">A toy forward model of breakthrough curves stands in for the neural operator; the update is the full ensemble
@@ -69,8 +70,8 @@ document.querySelectorAll('.eq-render').forEach(function (el) {
   try { katex.render(el.getAttribute('data-eq'), el, {throwOnError: false, displayMode: true}); } catch (e) {}
 });
 </script>
-<script src="../assets/js/lightbox.js?v=20261005000838"></script>
-<script src="../assets/js/demos/esmda.js?v=20261005000838"></script>
+<script src="../assets/js/lightbox.js?v=20261005101919"></script>
+<script src="../assets/js/demos/esmda.js?v=20261005101919"></script>
 
 </body>
 </html>
